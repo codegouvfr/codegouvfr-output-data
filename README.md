@@ -35,6 +35,11 @@ formations logiciels libres.
 
     bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/formations-logiciels-libres.clj
 
+`spit-faq-from-json-documentation`: Prend la version `json` de la
+documentation et en publie la FAQ en `json`.
+
+    bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/spit-faq-from-json-documentation.clj
+
 # Contribuer
 
 Vous pouvez contribuer en envoyant vos correctifs à `~codegouvfr/dev@lists.sr.ht`.  Pensez à configurer votre copie locale du dépôt ainsi :
