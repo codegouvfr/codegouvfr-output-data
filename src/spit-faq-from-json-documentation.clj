@@ -5,7 +5,7 @@
 ;; License-Filename: LICENSES/LICENSE.EPL-2.0.txt
 
 (def faq
-  (->> (json/parse-string (slurp "https://code.gouv.fr/data/index.json") true)
+  (->> (json/parse-string (slurp "https://code.gouv.fr/documentation/index.json") true)
        :contents
        (filter #(= "Foire aux questions" (:raw-value (:properties %))))
        first
