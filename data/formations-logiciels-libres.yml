@@ -1,0 +1,217 @@
+- organisme: Formation Libre
+  description: |
+    Formation Libre est un service proposé par la société keepin qui
+    assure des formations ouvertes à distance, encadrées par des
+    tuteurs issus du milieu professionnel. L'enseignement est bâti sur
+    une expérience de plus de six ans dans le monde du logiciel libre
+    et de l'accompagnement à distance.
+  formations:
+    - net01 - Administration système, réseau et premières applications
+    - et02 - Configuration réseau avancée et maquettage
+    - net03 - Démarrer avec IPv6
+    - dsl - Débuter Sous Gnu/Linux
+    - sys01 - Mise en œuvre, configuration et administration d'un système GNU/Linux
+    - sys02 - Programmation shell
+    - droit-ntic - Droit et NTIC
+  site_web: https://formation-libre.fr
+  courriel: contact@formation-libre.fr
+  adresse: SARL KEEPIN, Chabant, 87400 St Léonard de Noblat, France
+
+- organisme: Logilab
+  description: |
+    Assister à une formation Logilab, c'est :
+    - apprendre avec des professionnels compétents maîtrisant parfaitement le sujet qu'ils enseignent,
+    - bénéficier des conseils et des avis d'experts travaillant depuis longtemps dans le domaine,
+    - trouver des interlocuteurs attentifs et disponibles, cherchant à apporter à chacun les informations dont il a besoin.
+  formations:
+    - Les bases de la programmation avec Python
+    - La programmation avancée avec Python
+    - Le Python scientifique
+    - La programmation d'interface graphique
+    - La programmation Web
+    - Les outils et les méthodes pour le développement logiciel
+    - Le système d'exploitation Debian GNU / Linux
+  site_web: https://www.logilab.fr
+  courriel: formation@logilab.fr
+
+- organisme: Openska
+  description: |
+    Le métier premier d’Openska est la transmission de savoir. Notre
+    expertise part du logiciel Libre et se déploie sur toutes les
+    technologies Web avec une ouverture vers les principales
+    technologies informatiques.
+  formations:
+    - Commandes Linux
+    - Administration Linux
+    - Administration Linux expert
+    - sécurité Linux
+    - LDAP avec OpenLDAP
+    - OpenLDAP avancé
+    - Apache administration
+    - C avancé : programmation système sous Linux
+    - ElasticSearch
+    - Nagios : supervision avancée
+    - MySQL Développeur
+    - MySQL Administration
+    - MySQL Tuning
+    - NoSQL Introduction
+    - MongoDB
+    - PostGIS, base de données spatiale
+    - PostgreSQL Administration
+    - PostGreSQL Développeur
+    - PHP MySQL
+    - PHP avancé
+    - optimisation PHP
+    - PHPUnit et tests unitaires
+    - Symfony
+    - Zend Framework
+    - Java
+    - Java Expert
+    - J2EE JEE
+    - JSP
+    - Web Services en Java
+    - Maven – cycle de vie des projets Java
+    - HTML 5 CSS 3 : Les bases
+    - HTML 5 CSS 3 : intermédiaire
+    - JavaScript
+    - CSS3
+    - Accessibilité Web
+    - Performance Web
+    - Responsive design Web
+    - État de l’art de l’Open Source
+    - Licences libres et open source
+    - Modèles économiques du logiciel libre et open source
+  site_web: https://www.openska.com
+  courriel: contact@openska.com
+  adresse: 107 rue Caulaincourt, 75018 Paris - France
+
+- organisme: Self-Reliance
+  description: |
+   Self-Reliance est une association qui à pour objectif de rendre les
+   personnes autonomes devant l'outil informatique.  Elle accompagne
+   les groupes, associations, indépendants, TPE à monter leur
+   programme de formation à la carte. Les formations se déroulent sous
+   forme de démarche participative.
+  formations:
+    - Le système d'exploitation GNU/Linux Ubuntu.
+    - La bureautique (OpenOffice, Firefox, Thunderbird, GPG, etc.).
+    - Le graphisme (GIMP, inscape, etc.).
+    - La gestion de ressources (journalier, PhpCompta, VYM, agenda commun, etc.).
+    - Les CMS (Spip, GRR, GPLI, wiki, etc.).
+  site_web: https://www.self-reliance.be
+  courriel: infosr@self-reliance.be
+  adresse: Rue Haut Vent 35 ; B-5070 Fosses-La-Ville - Belgique
+
+- organisme: Formation Perl
+  description: |
+   Spécialiste du langage Perl, Sylvain Lhullier propose des formations
+   Perl professionnelles à destination des administrateurs systèmes et des
+   développeurs.
+
+   Auteur de conférences sur la prise en main et l'utilisation de Perl,
+   Sylvain Lhullier enseigne également ce langage en universités et écoles
+   d'ingénieur. Membre de la communauté francophone de Perl, il est
+   l'auteur d'articles de presse diffusés au niveau national.
+
+   Sylvain Lhullier intervient comme formateur Perl soit à son compte (en
+   intra-entreprise ou inter-entreprise), soit en délégation.
+  formations:
+    - Programmation en Perl
+  site_web: formation-perl.fr
+  courriel: contact@formation-perl.fr
+
+- organisme: Ac6-formation
+  description: |
+   Présentation organisme : Ac6-formation est un organisme de formation
+   basé en proche banlieue parisienne et offrant des formations dans ses
+   locaux ou chez ses clients dans toute la France. Ces formations, axées
+   sur les systèmes embarqués et temps réel, comportent toutes une partie
+   théorique approfondie mise en application lors de très nombreux
+   exercices pratiques.
+  formations:
+    - Linux pour les systèmes embarqués
+    - Programmation Utilisateur et Noyau sur Linux
+    - Linux pour le temps réel, RTLinux
+    - Écriture de pilotes (drivers) Linux
+    - Programmation en C, C++ ou Java pour les systèmes embarqués et/ou temps réel
+    - Analyse et conception avec UML et UML/RT
+  site_web: https://www.ac6-formation.com
+  courriel: info@ac6-formation.com
+  adresse: 21, rue Pierre Curie - 92400 Courbevoie - France
+
+- organisme: Actilis
+  description: |
+   Présentation organisme : Actilis est une société de conseil et
+   organisme de formation basé à Nantes. Actilis intervient principalement
+   en région Ouest mais aussi partout en France, Europe, et Afrique.
+
+   Formations : Une offre complète de formations du niveau débutant au
+   niveau d'expertise, cours modulaires et plans de formation adaptables
+   pour correspondre aux besoins exacts des clients (intra-entreprise et
+   cours particuliers). Plus de 50 modules disponibles pour constituer ses
+   formations à la carte :
+  formations:
+    - Linux Mise en oeuvre (4 jours)
+    - Linux Utilisation Avancée et Exploitation (4 jours)
+    - Linux Administration Système (5 jours)
+    - Linux pour Administrateurs Unix (3 jours)
+    - Linux Services Réseaux d'entreprise (4 jours)
+    - Apache, Administrer un intranet (4 jours)
+    - Sécuriser des Serveurs Unix/Linux (3 jours)
+  site_web: https://www.actilis.net/formation
+  courriel: formation@actilis.net
+  adresse: 319-321, route de Vannes, 44800 Saint-Herblain - France
+
+- organisme: AFI Aveyron
+  description: |
+   Présentation organisme : AFI Aveyron est une société situé en Aveyron
+   qui propose des formations professionnelles (Enregistrée sous le numéro
+   73 12 00630 12) et DIF auprès des entreprises et des particuliers. La
+   société intervient également en milieu scolaire (école maternelle et
+   élémentaire) afin d’initier les enfants à l’usage de l’outil
+   informatique. Le formateur dispose d’un agrément délivré par le
+   Directeur Académique de Services de l’Education Nationale de l’Aveyron.
+
+   Formations : les formations dispensées ont pour thèmes la bureautique
+   (Libre Office/Open Office), la photo numérique (The Gimp) et la gestion
+   et l’administration de site web sur CMS WordPress, Drupal, Xoops, Spip.
+  formations:
+    - La bureautique (Libre Office/Open Office)
+    - La photo numérique (The GIMP)
+    - La gestion et l'administration de site web sur CMS WordPress, Drupal, Xoops, Spip
+  site_web: https://www.afi-aveyron.fr
+  courriel: contact@afi-aveyron.fr
+  adresse: 17, rue du 11 novembre 12000 Rodez - France
+
+- organisme: Alcôve
+  description: |
+   Présentation organisme : Société européenne forte d'une longue
+   expertise sur GNU/Linux et les logiciels libres, Alcôve est partenaire
+   de IBM Formation et Learning Tree pour la formation inter-entreprises
+   sur les logiciels libres.
+
+   Formations : Dans le domaine des compétences GNU/Linux et logiciels
+   libres, Alcôve Formations propose des formations avancées s'adressant
+   aussi bien aux debutants qu'aux personnes expérimentées.
+  formations:
+    - Administration JBoss
+    - GNU/Linux : Administration système
+    - Debian GNU/Linux : Administration avancée
+    - GNU/Linux : Administration TCP/IP
+    - GNU/Linux : Intégration avec Windows NT avec Samba
+    - GNU/Linux : Mise en oeuvre d'un Firewall
+    - Installation et configuration d'OpenLDAP
+    - Introduction à J2EE sur JBoss
+    - Développement JBoss avancé
+    - Administration JBoss
+    - Maîtriser Apache
+    - Programmer en PHP
+    - Programmation et administration
+    - Développements systèmes en C sous Unix - Appels système
+    - Noyau Linux et pilotes de périphériques
+    - RTAI : Développement temps réel
+    - RTLINUX : Développement temps réel
+    - Outils de développement : Profiling / Debugging
+  site_web: https://www.alcove.fr
+  courriel: formation@fr.alcove.fr
+  adresse: 15, avenue de l'Agent Sarre, 92700 Colombes - France
