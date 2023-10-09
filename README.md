@@ -15,27 +15,31 @@ facilement des scripts écrits en Clojure.
 
 # Outils
 
-## catalogue-gouvtech-libre
+`catalogue-gouvtech-libre`: Extrait les logiciels libres de l'ancien
+catalogue GouvTech.
 
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/catalogue-gouvtech-libre.clj`
+    bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/catalogue-gouvtech-libre.clj
 
-## sill-prestataires
+`sill-prestataires`: Fusionner les données des prestataires SILL
+venant de l'ADULLACT et du CNLL.
 
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/sill-prestataires.clj`
+    bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/sill-prestataires.clj
 
-## annuaire-service-public-enrichi
+`annuaire-service-public-enrichi`: Enrichi le `.json` de l'annuaire
+des services publics en ajoutant les ancêtres directs et lointains.
 
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/annuaire-service-public-enrichi.clj`
+    bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/annuaire-service-public-enrichi.clj
 
-## formations-logiciels-libres
+`formations-logiciels-libres`: Produit un fichier `.json` avec les
+formations logiciels libres.
 
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/formations-logiciels-libres.clj`
+    bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/formations-logiciels-libres.clj
 
 # Contribuer
 
 Vous pouvez contribuer en envoyant vos correctifs à `~codegouvfr/dev@lists.sr.ht`.  Pensez à configurer votre copie locale du dépôt ainsi :
 
-`git config format.subjectPrefix 'PATCH codegouvfr-outils'`
+    git config format.subjectPrefix 'PATCH codegouvfr-outils'
 
 # Soutenir l'écosystème Clojure(script)
 
