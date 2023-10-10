@@ -15,30 +15,38 @@ facilement des scripts écrits en Clojure.
 
 # Outils
 
-`catalogue-gouvtech-libre`: Extrait les logiciels libres de l'ancien
-catalogue GouvTech.
+## `catalogue-gouvtech-libre`
 
-    bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/catalogue-gouvtech-libre.clj
+Extrait les logiciels libres de l'ancien catalogue GouvTech.
 
-`sill-prestataires`: Fusionner les données des prestataires SILL
-venant de l'ADULLACT et du CNLL.
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/catalogue-gouvtech-libre.clj`
 
-    bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/sill-prestataires.clj
+## `sill-prestataires`
 
-`annuaire-service-public-enrichi`: Enrichi le `.json` de l'annuaire
-des services publics en ajoutant les ancêtres directs et lointains.
+Fusionner les données des prestataires SILL venant de l'ADULLACT et du
+CNLL.
 
-    bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/annuaire-service-public-enrichi.clj
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/sill-prestataires.clj`
 
-`formations-logiciels-libres`: Produit un fichier `.json` avec les
-formations logiciels libres.
+## `annuaire-service-public-enrichi`
 
-    bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/formations-logiciels-libres.clj
+Enrichi le `.json` de l'annuaire des services publics en ajoutant les
+ancêtres directs et lointains.
 
-`spit-faq-from-json-documentation`: Prend la version `json` de la
-documentation et en publie la FAQ en `json`.
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/annuaire-service-public-enrichi.clj`
 
-    bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/spit-faq-from-json-documentation.clj
+## `formations-logiciels-libres`
+
+Produit un fichier `.json` avec les formations logiciels libres.
+
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/formations-logiciels-libres.clj`
+
+## `spit-faq-from-json-documentation`
+
+Prend la version `json` de la documentation et en publie la FAQ en
+`json`.
+
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/spit-faq-from-json-documentation.clj`
 
 # Contribuer
 
