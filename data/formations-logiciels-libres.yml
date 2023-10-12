@@ -1,24 +1,5 @@
 # Source: https://aful.org/professionnels/formations/
 
-- organisme: Formation Libre
-  description: |
-    Formation Libre est un service proposé par la société keepin qui
-    assure des formations ouvertes à distance, encadrées par des
-    tuteurs issus du milieu professionnel. L'enseignement est bâti sur
-    une expérience de plus de six ans dans le monde du logiciel libre
-    et de l'accompagnement à distance.
-  formations:
-    - net01 - Administration système, réseau et premières applications
-    - et02 - Configuration réseau avancée et maquettage
-    - net03 - Démarrer avec IPv6
-    - dsl - Débuter Sous Gnu/Linux
-    - sys01 - Mise en œuvre, configuration et administration d'un système GNU/Linux
-    - sys02 - Programmation shell
-    - droit-ntic - Droit et NTIC
-  site_web: https://formation-libre.fr
-  courriel: contact@formation-libre.fr
-  adresse: SARL KEEPIN, Chabant, 87400 St Léonard de Noblat, France
-
 - organisme: Logilab
   description: |
     Assister à une formation Logilab, c'est :
