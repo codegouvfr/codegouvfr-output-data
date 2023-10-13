@@ -56,6 +56,10 @@ Vous pouvez contribuer en envoyant vos correctifs à `~codegouvfr/dev@lists.sr.h
 
 Les messages de commit sont de préférence rédigés en anglais.
 
+Vous pouvez aussi créer un compte sur <https://sr.ht> et nous envoyer
+votre nom d'utilisateur, nous vous donnerons accès en écriture et vous
+pourrez publier vos contribution directement sur la branch `main`.
+
 # Soutenir l'écosystème Clojure(script)
 
 Si vous aimez Clojure(script), vous pouvez soutenir l'écosystème en faisant un don à [clojuriststogether.org](https://www.clojuriststogether.org).
