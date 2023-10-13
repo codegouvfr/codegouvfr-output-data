@@ -54,6 +54,8 @@ Vous pouvez contribuer en envoyant vos correctifs à `~codegouvfr/dev@lists.sr.h
 
     git config format.subjectPrefix 'PATCH codegouvfr-outils'
 
+Les messages de commit sont de préférence rédigés en anglais.
+
 # Soutenir l'écosystème Clojure(script)
 
 Si vous aimez Clojure(script), vous pouvez soutenir l'écosystème en faisant un don à [clojuriststogether.org](https://www.clojuriststogether.org).
