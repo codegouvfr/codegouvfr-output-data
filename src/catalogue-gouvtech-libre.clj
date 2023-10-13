@@ -47,7 +47,7 @@
                           "- **Lien GouvTech**: " (:Collection_ID %) "\n"
                           "- **Lien SILL**: " (:Lien_SILL %) "\n"
                           "- **Recherche SILL: https://code.gouv.fr/sill/list?search=" (:Nom_solution %)
-                          "- **Lien Wikidata**: ???" "\n\n")
+                          "- **Lien Wikidata**: N/A" "\n\n")
                      :append true)
               catalogue-gouvtech-libre))
   (println "Wrote catalogue-gouvtech-libre.md in this directory."))
