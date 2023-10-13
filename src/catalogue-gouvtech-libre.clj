@@ -46,7 +46,7 @@
                           "- **Licence**: " (:Licence_opensource %) "\n"
                           "- **Lien GouvTech**: " (:Collection_ID %) "\n"
                           "- **Lien SILL**: " (:Lien_SILL %) "\n"
-                          "- **Recherche SILL: https://code.gouv.fr/sill/list?search=" (:Nom_solution %)
+                          "- **Recherche SILL**: https://code.gouv.fr/sill/list?search=" (:Nom_solution %) "\n"
                           "- **Lien Wikidata**: N/A" "\n\n")
                      :append true)
               catalogue-gouvtech-libre))
