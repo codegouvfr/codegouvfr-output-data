@@ -70,4 +70,4 @@ Si vous aimez Clojure(script), vous pouvez soutenir l'écosystème en faisant un
 
 Le code est publié sous licence [EPL 2.0 license](LICENSES/LICENSE.EPL-2.0.txt).
 
-Les données sont publiées sous licence [Etalab 2.0 license](LICENSES/LICENSE.Etalab-2.0.md).
+Les données sont publiées sous licence [Etalab 2.0 license](LICENSES/LICENSE.Etalab-2.0.md) ou, au choix, [Creative Commons BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.fr).
