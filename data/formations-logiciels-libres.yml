@@ -1,4 +1,41 @@
-# Sources:
+# Objectif
+# ========
+#
+# L'objectif de ce fichier est de constituer une base de données
+# référençant toutes les formations proposées par des structures
+# françaises portant sur des logiciels libres ou des sujets liés
+# au mouvement du logiciel libre.
+#
+# Critères d'ajout
+# ================
+#
+# - Structure (ys compris personnelle) dont le siège est en France
+#
+# - Formations sur des logiciels libres (pas des langages ni des
+#   méthodes, sauf si ils/elles sont spécifique au libre)
+#
+# - Formations sur des enjeux liés au mouvement du logiciel libre
+#   (questions légales, économiques, sociétales)
+#
+# Méthode pour ajouter
+# ====================
+#
+# Vous pouvez contribuer:
+#
+# - en modifiant ce fichier .yml depuis le dépôt Git:
+#   https://git.sr.ht/~codegouvfr/codegouvfr-outils
+#
+# - en modifiant ce pad :
+#   https://pad.numerique.gouv.fr/LbqF45YCQzSDISC23fTgZA#
+#
+# - en écrivant à contact@code.gouv.fr en précisant pour chaque
+#   entrée: organisme/description/formations/site_web/courriel/adresse
+#
+# Sources
+# =======
+#
+# Vous pouvez consulter ces sources et en ajouter d'autres :
+#
 # - https://aful.org/professionnels/formations/
 # - https://www.apitux.com/formations.php
 
@@ -146,4 +183,3 @@
   site_web: https://www.actilis.net/formation
   courriel: formation@actilis.net
   adresse: 319-321, route de Vannes, 44800 Saint-Herblain - France
-
