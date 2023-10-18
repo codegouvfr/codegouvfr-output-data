@@ -50,7 +50,7 @@ Prend la version `json` de la documentation et en publie la FAQ en
 
 # Contribuer
 
-Vous pouvez contribuer en envoyant vos correctifs à `~codegouvfr/dev@lists.sr.ht`.  Pensez à configurer votre copie locale du dépôt ainsi :
+Vous pouvez contribuer en envoyant vos correctifs (*patches*) à `~codegouvfr/dev@lists.sr.ht`.  Pensez à configurer votre copie locale du dépôt ainsi :
 
     git config format.subjectPrefix 'PATCH codegouvfr-outils'
 
@@ -59,6 +59,8 @@ Les messages de commit sont de préférence rédigés en anglais.
 Vous pouvez aussi créer un compte sur <https://sr.ht> et nous envoyer votre nom d'utilisateur, nous vous donnerons accès en écriture et vous pourrez publier vos contribution directement sur la branch `main`.
 
 Nous n'acceptons les contributions que si elles sont signées (*signed off*) du vrai nom du contributeur.  En signant ses contributions, le contributeur accepte le [developer certificate of origin](https://developercertificate.org).
+
+Si vous le souhaitez, vous pouvez aussi envoyer vos suggestions directement à l'adresse `contact@code.gouv.fr`.
 
 # Soutenir l'écosystème Clojure(script)
 
