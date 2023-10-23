@@ -183,3 +183,61 @@
   site_web: https://www.actilis.net/formation
   courriel: formation@actilis.net
   adresse: 319-321, route de Vannes, 44800 Saint-Herblain - France
+
+- organisme: Makina Corpus
+  description : |
+    Organisme de formation conventionné et certifié Qualiopi, Makina Corpus
+    Formation propose des formations professionnelles aux technologies du web.
+    Nos experts partagent leurs savoir-faire en développement web grâce à une
+    offre complète de formations.
+  formations
+   - Administration et personnalisation de Geotrek
+   - Analyse d’images
+   - Angular
+   - Angular avancé
+   - API REST en NodeJS avec FeathersJS
+   - Cypress
+   - Data visualisation
+   - Développement d'applications JavaScript
+   - Développer avec l'écosystème d'OpenStreetMap
+   - Django avancé
+   - Django initiation
+   - Django intégration
+   - Django Rest Framework
+   - Drupal Administrateur
+   - Drupal Développeur
+   - Drupal Intégrateur
+   - Git avancé
+   - Git, gestionnaire de versions
+   - Initiation à Python pour les administrateurs systèmes
+   - Initiation au Python scientifique
+   - Jupyter Notebook
+   - Leaflet
+   - Machine Learning
+   - Machine learning et compréhension de la donnée
+   - MapLibre
+   - Matomo - migration Google Analytics vers Matomo
+   - Mise en place de projets Deep Learning avec Keras
+   - Nuxt 3
+   - Parcours complet Data Science
+   - Passer de Matlab à Python
+   - PostGIS
+   - PostgreSQL
+   - Progressive Web App - PWA
+   - Python
+   - Python avancé
+   - Python pour l'analyse géospatiale
+   - Python scientifique
+   - QGIS
+   - React Native
+   - ReactJS
+   - Sécurité web
+   - Symfony initiation
+   - Tuiles vectorielles
+   - Utilisation de Geotrek
+   - UX - UI design de service
+   - Valoriser vos données dormantes avec le Machine Learning
+   - VueJS
+  site_web: https://makina-corpus.com/formations
+  courriel: formation@makina-corpus.com
+  adresse: 52 rue Jacques Babinet, 31100 Toulouse - France
