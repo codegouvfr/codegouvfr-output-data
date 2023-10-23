@@ -190,7 +190,7 @@
     Formation propose des formations professionnelles aux technologies du web.
     Nos experts partagent leurs savoir-faire en développement web grâce à une
     offre complète de formations.
-  formations
+  formations:
    - Administration et personnalisation de Geotrek
    - Analyse d’images
    - Angular
