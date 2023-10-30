@@ -241,3 +241,22 @@
   site_web: https://makina-corpus.com/formations
   courriel: formation@makina-corpus.com
   adresse: 52 rue Jacques Babinet, 31100 Toulouse - France
+
+- organisme: Wiki Valley
+  description: >
+    Wiki Valley est une société de conseil spécialisée sur le logiciel
+    MediaWiki, qui permet de gérer des bases de connaissances collaboratives.
+    Elle propose des formations aux utilisateurs et administrateurs du wiki,
+    ainsi qu’aux administrateurs système. Les formations sont principalement
+    en intra-entreprise en France.
+  formations:
+    - "Formation MediaWiki initiale : Naviguer et contribuer à un wiki
+       fonctionnant avec MediaWiki à l’instar de Wikipédia"
+    - "Formation MediaWiki : Édition avancée et administration d’un wiki"
+    - "Formation wiki Hébergeur : Mettre en place un wiki avec MediaWiki,
+       installation et configuration sur le serveur"
+    - "Formation MediaWiki architecte : Structurer son wiki avec Semantic
+       MediaWiki pour créer une base de connaissances collaborative"
+  site_web: https://wiki-valley.com
+  courriel: contact@wiki-valley.com
+  adresse: 2 route de Miserey 25115 Pouilley-les-Vignes
