@@ -260,3 +260,21 @@
   site_web: https://wiki-valley.com
   courriel: contact@wiki-valley.com
   adresse: 2 route de Miserey 25115 Pouilley-les-Vignes
+
+- organisme: way2Sv
+  description: >
+    Organisme de formation conventionné et certifié Qualiopi pour ses
+    actions de formation, way2Sv utilise essentiellement pour ses
+    propres besoins et ceux de ses clients des solutions libres. Nous
+    sommes convaincus des valeurs porteuses du libre et de la richesse
+    des leurs communautés dont Way2Sv est adhérent actif dans
+    certaines d'entre elles. Nous proposons nos compétences dans le
+    cadre d'activités complémantaires : le conseil, l'AMOA, le
+    pilotage de projet et la formation.
+  formations:
+    - "LANO-Open Source: Acculturation numérique ouvert ou Comprendre les avantages des logiciels Open Source et des solutions libres"
+    - "LOMO-Libre et Open-source : Mise en Oeuvre"
+    - "SCEN-Scenari-Chaîne Editoriale"
+  site_web: https://www.way2sv.com/
+  courriel: formation@forway2sv.com
+  adresse: 590 cgemin de restes, 31380 Gragnague - France
