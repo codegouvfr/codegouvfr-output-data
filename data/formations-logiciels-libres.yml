@@ -278,3 +278,17 @@
   site_web: https://www.way2sv.com/
   courriel: formation@forway2sv.com
   adresse: 590 chemin de restes, 31380 Gragnague - France
+
+- organisme: Bashroom
+  description: >
+    Un collectif d'experts indépendants passionnés de technique, d'open-source et de développement propre ✨
+    Nous considérons l’enseignement et la formation comme des piliers de l’intelligence collective à laquelle nous contribuons et que nous soutenons avec ferveur.
+    Nous mettons nos connaissances et compétences à disposition afin d'aider les personnes et organisations à combler leurs lacunes techniques.
+    Nous opérons à distance ou sur site dans toute la France.
+  formations:
+    - Git pour débutants
+    - Git avancé : Gitlab et Gitflow
+    - Rust : un langage open-source sécurisé, performant et moderne
+  site_web: https://bashroom.com/
+  courriel: academy@bashroom.com
+  adresse: 12 rue Louis Renault 31130 Balma
