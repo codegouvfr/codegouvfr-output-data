@@ -25,7 +25,9 @@
 
 (def cnll
   (->> (json/parse-string (slurp (str cnll_baseurl cnll_filename)) true)
-       (map (juxt :sill_id #(:prestataires %)))))
+       (map (juxt :sill_id
+                  #(map (fn [p] (set/rename-keys p {:url :cnll_url}))
+                        (:prestataires %))))))
 
 (def all
   (->> (group-by first (concat cdl cnll))
