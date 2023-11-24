@@ -17,7 +17,7 @@
 ;; ~$ list-repos-wo-license.clj -o organization_name
 ;;
 ;; The same, but force refreshing the local database:
-;; ~$ list-repos-wo-license.clj --force -o organization_name
+;; ~$ list-repos-wo-license.clj -r -o organization_name
 
 (require '[babashka.cli :as cli])
 
@@ -26,7 +26,7 @@
 (if-let [orga-name (:o opts)]
   (let [repos-file (str (System/getenv "HOME") "/.repos.json")
         repos-json (try (slurp repos-file) (catch Exception e nil))]
-    (if (and (not-empty repos-json) (false? (:force opts)))
+    (if (and (not-empty repos-json) (not (true? (:r opts))))
       (println "Read ~/.repos.json: done")
       (do (println "Store repos data in ~/.repos.json")
           (let [repos (slurp "https://code.gouv.fr/data/repositories/json/all.json")]
