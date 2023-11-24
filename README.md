@@ -48,6 +48,13 @@ Prend la version `json` de la documentation et en publie la FAQ en
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/spit-faq-from-json-documentation.clj`
 
+## `list-repos-wo-license.clj`
+
+Permet de lister les dépôts pour lesquels manque une licence parmi
+ceux référencés sur https://code.gouv.fr/public/.
+
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/list-repos-wo-license.clj`
+
 # Contribuer
 
 Vous pouvez contribuer en envoyant vos correctifs (*patches*) à `~codegouvfr/dev@lists.sr.ht`.  Pensez à configurer votre copie locale du dépôt ainsi :
