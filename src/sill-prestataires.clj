@@ -21,7 +21,7 @@
                          (:providers %))))
        (map (fn [[a b]]
               [a (into [] (map (fn [[x y z]]
-                                 {:nom x :cdl_url y :website y}) b))]))))
+                                 {:nom x :cdl_url y :website z}) b))]))))
 
 (def cnll
   (->> (json/parse-string (slurp (str cnll_baseurl cnll_filename)) true)
