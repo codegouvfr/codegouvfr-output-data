@@ -243,7 +243,7 @@
   adresse: 52 rue Jacques Babinet, 31100 Toulouse - France
 
 - organisme: Wiki Valley
-  description: >
+  description: >-
     Wiki Valley est une société de conseil spécialisée sur le logiciel
     MediaWiki, qui permet de gérer des bases de connaissances collaboratives.
     Elle propose des formations aux utilisateurs et administrateurs du wiki,
@@ -262,7 +262,7 @@
   adresse: 2 route de Miserey 25115 Pouilley-les-Vignes
 
 - organisme: way2Sv
-  description: >
+  description: >-
     Organisme de formation conventionné et certifié Qualiopi pour ses
     actions de formation, way2Sv utilise essentiellement pour ses
     propres besoins et ceux de ses clients des solutions libres. Nous
@@ -280,7 +280,7 @@
   adresse: 590 chemin de restes, 31380 Gragnague - France
 
 - organisme: Bashroom
-  description: >
+  description: >-
     Un collectif d'experts indépendants passionnés de technique, d'open-source et de développement propre ✨
     Nous considérons l’enseignement et la formation comme des piliers de l’intelligence collective à laquelle nous contribuons et que nous soutenons avec ferveur.
     Nous mettons nos connaissances et compétences à disposition afin d'aider les personnes et organisations à combler leurs lacunes techniques.
@@ -292,3 +292,95 @@
   site_web: https://bashroom.com/
   courriel: academy@bashroom.com
   adresse: 12 rue Louis Renault 31130 Balma
+
+- organisme: Oslandia
+  description: >-
+    Oslandia propose des formations en systèmes d'information géographique opensource, tant en inter-entreprise qu'en intra-entreprise, en présentiel ou en visio-conférence. Effectuées par des experts et contributeurs aux logiciels "FOSS4G", les formations sont équilibrées entre théorie et pratique, et personnalisables pour vos besoins. QGIS, PostGIS, Web, les sujets sont multiples. Oslandia est certifiée Qualiopi.
+  formations:
+  - PGIS1 : PostGIS mise en œuvre
+  - PGIS2 : PostGIS fonctionnalités avancées
+  - PGIS3 : PostGIS Raster
+  - PGISDBA : PostGIS administration
+  - PGISDEV : PostgreSQL/PostGIS core
+  - QGIS1 : Introduction à QGIS
+  - QGIS2 : Perfectionnement QGIS
+  - QGIS3 : Dessin, passer d'AutoCAD à QGIS
+  - QGIS4 : Traitements QGIS Processing
+  - QGISDEV1 : Développement de plugins QGIS en Python
+  - QGISDEV2 : Développement de plugins QGIS avec Processing
+  - QGISDEV3 : Développement C++ pour QGIS
+  - QGISDEV4 : Couplage de QGIS et des outils de simulation
+  - QGISDEV5 : Construire son application web carto avec QGIS Server et QWC2
+  - QGIS5 : QGIS Server
+  - QGIS6 : Conception d'applications métiers avec PostGIS et QGIS
+  - QGIS7 : Modélisation de bases de données spatiales
+  - QGIS8 - Modélisation et analyse spatiale avec GRASS
+  - QGIS9 : Administration d'un parc QGIS
+  - DS1 : Introduction à la Data Science
+  - DS2: Python pour le calcul scientifique
+  - DS3 : Formation Data Science en Python
+  - DS4: Data Science pour les SIG
+  - DS5 : OpenStreetMap & Data
+  - DS6: Etude de cas autour de l’OpenData
+  - DS7 : TensorFlow et réseaux de neurones
+  - DS8: IA pour l'imagerie
+  - TSP : Traitements SIG avec Python
+  - TSC : Traitements SIG en C++
+  - OSM : Intégrer les données OpenStreetMap dans votre SI
+  - ROU : Solutions de Routing Open Source
+  - TEM : Tempus, solution de routing multimodal
+  - PGIS6 : PostGIS 3D
+  - GIR: Développement web 3D avec Giro3D
+  - ITW : Développement web 3D avec iTowns
+  - CES : Développement web 3D avec Césium
+  - PC : Outils libres de visualisation et traitement de nuages de points
+  - PGIS7 : Nuages de points avec PostgreSQL/PostGIS
+  - SFM : Outils libres pour la reconstitution 3D photogrammétrique (SfM)
+  - UAV : Exploitation des données UAV photo et 3D avec des logiciels libres
+  - LFT: Cartographie web avec Leaflet
+  - OL: Cartographie web avec Openlayers
+  site_web: https://formations.oslandia.com
+  courriel: formation@oslandia.com
+  adresse: Oslandia, Tour de l'horloge, 4 Pl Louis Armand, 75012 PARIS
+
+- organisme: Dalibo
+  description: >-
+    Depuis 2005, Dalibo met à la disposition de ses clients son savoir-faire dans le domaine des bases de données et propose des services de conseil, de formation et de support aux entreprises et aux institutions. Certifiées Qualiopi, nos formations sont animées par nos DBA consultants. Elles ont lieu en intra ou inter-entreprises, dans vos locaux (intra), au siège de Dalibo, ou à distance. Par ailleurs, chaque personne inscrite reçoit un code pour commander gratuitement l’impression et la livraison à domicile de deux manuels de son choix.
+  formations:
+  - DBA1 : Administration PosgreSQL
+  - DBA2 : Administration PosgreSQL Avancée
+  - DBA3 : Sauvegarde et Réplication avec PostgreSQL
+  - HAPAT : Haute disponibilité avec PostgreSQL
+  - PERF1 : PostgreSQL Performances
+  - PERF2 : Indexation et SQL Avancés
+  - DEVPG : Développer avec PostgreSQL
+  - DBAADM : Administration PostgreSQL pour DBA Avancés/avancées
+  - MIGORPG : Migrer d'Oracle à PostgreSQL
+  site_web: https://www.dalibo.com/formations
+  courriel: formation@dalibo.com
+  adresse: DALIBO - 43 rue du Faubourg Montmartre - 75009 Paris
+
+- organisme: Ezlearn Conseil
+  description: >-
+    Organisme de formation certifié Qualiopi, Ezlearn Conseil utilise et propose des formations aux logiciels de Scenari : Opale, Dokiel et Optim. Je suis spécialisée en formation de formateur, en environnements numériques d’apprentissage et en fabrication de médias pédagogiques numériques. 
+  formations:
+  - Créer un support pédagogique multimédia en ligne avec Opale ou Dokiel
+  - Créer son site internet avec Optim
+  site_web: https://www.ezlearnconseil.fr/
+  courriel: hello@ezlearnconseil.fr
+  adresse: 25 avenue Alain Gerbault 31100 Toulouse
+
+- organisme: Coopaname Formations (pas de nom précis pour l'instant)
+  description: >-
+    Coopaname est une coopérative d'activités et d'emplois généraliste basée à Paris. Elle regroupe une grande quantité d'activités dont un organisme de formation certifié Qualiopi. Certaines formations portent sur l'usage de logiciels libres.
+  formations:
+  - Retouche d'images avec GIMP
+  - Dessin vectoriel avec Inkscape
+  - Mise en page de documents imprimés avec Scribus
+  - Montage vidéo avec Shotcut (et aussi du OpenCamera pour Android, Subtitle Composer)
+  - Animation vectorielle et motion design avec Synfig Studio
+  - Utilisation de Linux sur un poste de travail non informaticien
+  - Gestion d'un organisme de formation avec https://opaga.fr (formation animée par l'auteur du logiciel)
+  site Web: https://formation.coopaname.coop/
+  courriel: of@coopaname.coop
+  adresse: 3/7 rue Albert Marquet 75020 Paris
