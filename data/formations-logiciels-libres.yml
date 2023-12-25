@@ -370,7 +370,7 @@
   courriel: hello@ezlearnconseil.fr
   adresse: 25 avenue Alain Gerbault 31100 Toulouse
 
-- organisme: Coopaname Formations (pas de nom précis pour l'instant)
+- organisme: Coopaname Formations
   description: >-
     Coopaname est une coopérative d'activités et d'emplois généraliste basée à Paris. Elle regroupe une grande quantité d'activités dont un organisme de formation certifié Qualiopi. Certaines formations portent sur l'usage de logiciels libres.
   formations:
@@ -384,3 +384,13 @@
   site Web: https://formation.coopaname.coop/
   courriel: of@coopaname.coop
   adresse: 3/7 rue Albert Marquet 75020 Paris
+
+- organisme: Ceméa
+  description: >-
+    Organisme de formation d'éducation populaire, les Ceméa sont présents sur tout le territoire et proposent des formations notamment dans le domaine du numérique éthique libre et responsable.
+  formations:
+  - Formation à Zourit : Les Ceméa accompagnent les structures qui choisissent d'adopter la solution Zourit avec des journées de formation, prises en charge par leur employeur. Ces journées permettent de prendre en main l'outil et de migrer leurs mail, cloud, visio; etc.
+  - Sensibilisation au libre éthique : Les Ceméa interviennent pour des formations de sensibilisation aux enjeux éthiques des structures d'éducation populaire et de la cohérence d'adopter des outils et des services cohérents avec leurs valeurs.
+  site_web: https://zourit.net
+  courriel: zourit@cemea.asso.fre
+  adresse: 24 rue Marc Seguin 75018 Paris
