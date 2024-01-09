@@ -75,7 +75,7 @@ Si vous aimez Clojure(script), vous pouvez soutenir l'écosystème en faisant un
 
 # Licence
 
-2023 DINUM, Bastien Guerry.
+2023-2024 DINUM, Bastien Guerry.
 
 Le code est publié sous licence [EPL 2.0 license](LICENSES/LICENSE.EPL-2.0.txt).
 
