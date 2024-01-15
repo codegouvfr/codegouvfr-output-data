@@ -394,3 +394,12 @@
   site_web: https://zourit.net
   courriel: zourit@cemea.asso.fre
   adresse: 24 rue Marc Seguin 75018 Paris
+
+- organisme: Teritorio
+  description: >-
+    Une journée pour découvrir OpenStreetMap, les bases de la contribution à OpenStreetMap, les usages, le vocabulaire propre à OpenStreetMap et quelques outils pour extraire des données
+    formations:
+    - Découvrir et contribuer à OpenStreetMap
+  site_web: https://www.teritorio.fr/solution/formations/
+  courriel: v.bergeot@teritorio.fr
+  adresse: Bordeaux
