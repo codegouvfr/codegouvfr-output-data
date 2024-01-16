@@ -362,7 +362,7 @@
 
 - organisme: Ezlearn Conseil
   description: >-
-    Organisme de formation certifié Qualiopi, Ezlearn Conseil utilise et propose des formations aux logiciels de Scenari : Opale, Dokiel et Optim. Je suis spécialisée en formation de formateur, en environnements numériques d’apprentissage et en fabrication de médias pédagogiques numériques. 
+    Organisme de formation certifié Qualiopi, Ezlearn Conseil utilise et propose des formations aux logiciels de Scenari : Opale, Dokiel et Optim. Je suis spécialisée en formation de formateur, en environnements numériques d’apprentissage et en fabrication de médias pédagogiques numériques.
   formations:
   - Créer un support pédagogique multimédia en ligne avec Opale ou Dokiel
   - Créer son site internet avec Optim
@@ -633,3 +633,18 @@
   site_web: https://www.2i2l.fr/
   courriel: formation@2i2l.fr
   adresse: 12 avenue Jules Verne 44230 Saint-Sébastien-sur-Loire
+
+- organisme: Coopaname Formations
+  description: >-
+     Coopaname est une coopérative d'activités et d'emplois généraliste basée à Paris. Elle regroupe une grande quantité d'activités dont un organisme de formation certifié Qualiopi. Certaines formations portent sur l'usage de logiciels libres.
+  formations:
+  - Retouche d'images avec GIMP
+  - Dessin vectoriel avec Inkscape
+  - Mise en page de documents imprimés avec Scribus
+  - Montage vidéo avec Shotcut (et aussi du OpenCamera pour Android, Subtitle Composer)
+  - Animation vectorielle et motion design avec Synfig Studio
+  - Utilisation de Linux sur un poste de travail non informaticien
+  - Gestion d'un organisme de formation avec [OPAGA](https://opaga.fr) (formation animée par l'auteur du logiciel)
+  site_Web: https://formation.coopaname.coop
+  courriel: of@coopaname.coop, dimitri.robert@formation-logiciel-libre.com
+  adresse: 3/7 rue Albert Marquet 75020 Paris
