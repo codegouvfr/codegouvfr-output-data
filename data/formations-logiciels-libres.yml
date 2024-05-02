@@ -648,3 +648,16 @@
   site_Web: https://formation.coopaname.coop
   courriel: of@coopaname.coop, dimitri.robert@formation-logiciel-libre.com
   adresse: 3/7 rue Albert Marquet 75020 Paris
+
+- organisme: Coopaname-Clairiere
+  description: >-
+    Former et accompagner les structures de l’économie sociale et solidaire (ESS), dans la migration vers des systèmes informatiques respectueux des utilisateurs et utilisatrices (donc en s'appuaynt le plus possible sur des logiciels libres)
+  formations:
+  - Enjeux, pour la gouvernance de la structure, d'engager une migration des un système d'information maîtrisé et plus sain
+  - Des logiciels libres pou mieux maîtriser ses données et converger avec la logique du RGPD
+  - Accompagnement à la mise en place et à la prise en main des outils tels que ceux proposés par le collectif chatons.org
+  - Formation à la prise en main de Zourit
+  - Formation à l'animation et à la prise en main de bénévalibre
+  site_web: https://clairiere.coop
+  courriel: laurent.costy@clairiere.coop
+  adresse: 3/7 rue Albert Marquet 75020 Paris
