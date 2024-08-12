@@ -11,4 +11,4 @@
        first
        :contents))
 
-(spit "faq.json" (json/generate-string faq))
+(spit "faq.json" (json/generate-string faq {:pretty true}))
