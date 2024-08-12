@@ -38,6 +38,16 @@
 #
 # - https://aful.org/professionnels/formations/
 # - https://www.apitux.com/formations.php
+#
+# Schéma
+# 
+# organisme: [string]
+# description: [string]
+# formations: [list of strings]
+#   - ...
+#   - ...
+# site_web: [string]
+# courriel: [string]
 
 - organisme: Logilab
   description: |
