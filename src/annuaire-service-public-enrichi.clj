@@ -59,8 +59,6 @@
   #{
     ;; "Ministère de l'Éducation nationale et de la Jeunesse"
     "3ed2f725-e077-4973-a531-498e13fc7861"
-    ;; "Ministère de la Transition énergétique"
-    "05f90b6a-e3d9-4a41-a919-2e2f2d77e517"
     ;; "Ministère des Solidarités, de l'Autonomie et des Personnes handicapées"
     "38a2db24-e96e-4e30-8013-98dd8a7b705d"
     ;; "Ministère de l'Enseignement supérieur et de la Recherche"
