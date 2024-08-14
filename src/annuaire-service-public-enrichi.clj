@@ -60,7 +60,7 @@
     ;; "Ministère de l'Éducation nationale et de la Jeunesse"
     "3ed2f725-e077-4973-a531-498e13fc7861"
     ;; "Ministère de la Transition énergétique"
-    "d9fbea7b-d02f-46ea-8fc6-9e356f0383ff"
+    "05f90b6a-e3d9-4a41-a919-2e2f2d77e517"
     ;; "Ministère des Solidarités, de l'Autonomie et des Personnes handicapées"
     "38a2db24-e96e-4e30-8013-98dd8a7b705d"
     ;; "Ministère de l'Enseignement supérieur et de la Recherche"
@@ -93,8 +93,8 @@
     "82108933-ca09-4b05-b8b6-be04cc434de6"
     ;; "Institutions et juridictions"
     "b34a97a6-5862-4fb4-9700-9e6e8e7f4b22"
-    ;; "Institutions européennes"
-    "5ab658c6-7ed8-4ad1-88fb-9d80928f5408"
+    ;; "Commission européenne"
+    "b128cdf9-1bf5-4294-9470-2041e8ecd1f6"
     })
 
 (defn get-ancestor [service_superieur_id]
