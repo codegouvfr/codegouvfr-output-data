@@ -127,11 +127,3 @@
 (println "Creating annuaire_sup.json...")
 (spit "annuaire_sup.json"
       (json/generate-string annuaire-data {:pretty true}))
-
-;; Output annuaire_min.json
-(println "Creating annuaire_min.json...")
-(spit "annuaire_min.json"
-      (json/generate-string
-       (map #(select-keys % [:id :nom :sigle :service_top])
-            annuaire-data)
-       {:pretty true}))
