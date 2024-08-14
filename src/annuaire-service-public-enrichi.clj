@@ -40,9 +40,8 @@
 (def db (d/db conn))
 
 ;; Feed it with annuaire data
-(doseq [a annuaire-data]
-  (try (d/transact! conn [a])
-       (catch Exception e (println (.getMessage e)))))
+(try (d/transact! conn (into [] annuaire-data))
+     (catch Exception e (println (.getMessage e))))
 
 ;; Add service_sup
 (println "Adding service_sup...")
