@@ -30,12 +30,12 @@
 (shell/sh "rm" "-fr" "/tmp/annuaire")
 
 ;; Create the new db
-(def schema {:id                {:db/valueType :db.type/string :db/unique :db.unique/identity}
-             :nom               {:db/valueType :db.type/string}
-             :sigle             {:db/valueType :db.type/string}
-             :service_superieur {:db/valueType :db.type/string}
-             :service_top       {:db/valueType :db.type/string}
-             :hierarchie        {:db/cardinality :db.cardinality/many}})
+(def schema {:id          {:db/valueType :db.type/string :db/unique :db.unique/identity}
+             :nom         {:db/valueType :db.type/string}
+             :sigle       {:db/valueType :db.type/string}
+             :service_sup {:db/valueType :db.type/string}
+             :service_top {:db/valueType :db.type/string}
+             :hierarchie  {:db/cardinality :db.cardinality/many}})
 (def conn (d/get-conn "/tmp/annuaire" schema))
 (def db (d/db conn))
 
@@ -44,19 +44,19 @@
   (try (d/transact! conn [a])
        (catch Exception e (println (.getMessage e)))))
 
-;; Add service_superieur
-(println "Adding service_superieur...")
+;; Add service_sup
+(println "Adding service_sup...")
 (doseq [{:keys [id hierarchie]} (filter #(< 0 (count (:hierarchie %))) annuaire-data)]
   (doseq [{:keys [service]} (filter #(= (:type_hierarchie %) "Service Fils") hierarchie)]
     (try
-      (d/transact! conn [{:id service :service_superieur id}])
+      (d/transact! conn [{:id service :service_sup id}])
       (catch Exception e (println (.getMessage e))))))
 
 ;; Update annuaire-data
 (defn annuaire-reset-data []
   (->> (d/q '[:find ?e :where [?e :id _]] db)
        (map #(d/touch (d/entity db (first %))))
-       (map #(select-keys % [:id :hierarchie :nom :sigle :service_top :service_superieur]))))
+       (map #(select-keys % [:id :hierarchie :nom :sigle :service_top :service_sup]))))
 
 ;; Reset annuaire data
 (def annuaire-data (annuaire-reset-data))
@@ -101,10 +101,10 @@
     "b128cdf9-1bf5-4294-9470-2041e8ecd1f6"
     })
 
-(defn get-ancestor [service_superieur_id]
+(defn get-ancestor [service_sup_id]
   (let [seen (atom #{})]
-    (loop [s_id service_superieur_id]
-      (let [sup (:service_superieur
+    (loop [s_id service_sup_id]
+      (let [sup (:service_sup
                  (first (filter #(= (:id %) s_id) annuaire-data)))]
         (if (or (nil? sup)
                 (contains? @seen s_id)
@@ -115,10 +115,10 @@
 
 ;; Add service_top
 (println "Adding service_top...")
-(doseq [{:keys [id service_superieur]}
-        (filter #(seq (:service_superieur %)) annuaire-data)]
+(doseq [{:keys [id service_sup]}
+        (filter #(seq (:service_sup %)) annuaire-data)]
   (d/transact! conn [{:id id :service_top
-                      (get-ancestor service_superieur)}]))
+                      (get-ancestor service_sup)}]))
 
 ;; Reset annuaire-data
 (def annuaire-data (annuaire-reset-data))
