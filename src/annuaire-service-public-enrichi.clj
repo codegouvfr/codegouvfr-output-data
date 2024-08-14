@@ -18,18 +18,24 @@
 
 ;; Create a variable containing the original data
 (def annuaire-data
-  (:service (json/parse-string (slurp "annuaire.json") true)))
+  (map #(select-keys % [:id :hierarchie :nom :sigle])
+       (:service (json/parse-string (slurp "annuaire.json") true))))
 
 ;; Require datalevin pod
 (require '[babashka.pods :as pods])
-(pods/load-pod 'huahaiy/datalevin "0.8.19")
+(pods/load-pod 'huahaiy/datalevin "0.9.10")
 (require '[pod.huahaiy.datalevin :as d])
 
 ;; Remove possibly preexistent db
 (shell/sh "rm" "-fr" "/tmp/annuaire")
 
 ;; Create the new db
-(def schema {:id {:db/valueType :db.type/string :db/unique :db.unique/identity}})
+(def schema {:id                {:db/valueType :db.type/string :db/unique :db.unique/identity}
+             :nom               {:db/valueType :db.type/string}
+             :sigle             {:db/valueType :db.type/string}
+             :service_superieur {:db/valueType :db.type/string}
+             :service_top       {:db/valueType :db.type/string}
+             :hierarchie        {:db/cardinality :db.cardinality/many}})
 (def conn (d/get-conn "/tmp/annuaire" schema))
 (def db (d/db conn))
 
@@ -40,19 +46,19 @@
 
 ;; Add service_superieur
 (println "Adding service_superieur...")
-(doseq [{:keys [id hierarchie]} (filter #(seq (:hierarchie %)) annuaire-data)]
-  (doseq [{:keys [type_hierarchie service]} hierarchie]
-    (when (and (= type_hierarchie "Service Fils")
-               (seq (filter #(= (:id %) service) annuaire-data)))
-      (try
-        (d/transact! conn [{:id service :service_superieur id}])
-        (catch Exception e (println (.getMessage e)))))))
+(doseq [{:keys [id hierarchie]} (filter #(< 0 (count (:hierarchie %))) annuaire-data)]
+  (doseq [{:keys [service]} (filter #(= (:type_hierarchie %) "Service Fils") hierarchie)]
+    (try
+      (d/transact! conn [{:id service :service_superieur id}])
+      (catch Exception e (println (.getMessage e))))))
 
 ;; Update annuaire-data
 (defn annuaire-reset-data []
   (->> (d/q '[:find ?e :where [?e :id _]] db)
-       (map first)
-       (map #(dissoc (d/entity db %) :db/id))))
+       (map #(d/touch (d/entity db (first %))))
+       (map #(select-keys % [:id :hierarchie :nom :sigle :service_top :service_superieur]))))
+
+;; Reset annuaire data
 (def annuaire-data (annuaire-reset-data))
 
 (def tops
