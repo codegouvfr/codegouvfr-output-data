@@ -32,6 +32,7 @@
 ;; Create the new db
 (def schema {:id {:db/valueType :db.type/string :db/unique :db.unique/identity}})
 (def conn (d/get-conn "/tmp/annuaire" schema))
+(defn db [] (d/db conn))
 
 ;; Feed it with annuaire data
 (try (d/transact! conn (into [] annuaire-data))
@@ -47,8 +48,8 @@
 
 ;; Update annuaire-data
 (defn annuaire-reset-data []
-  (->> (d/q '[:find ?e :where [?e :id _]] (d/db conn))
-       (map #(d/touch (d/entity (d/db conn) (first %))))
+  (->> (d/q '[:find ?e :where [?e :id _]] (db))
+       (map #(d/touch (d/entity (db) (first %))))
        (map #(select-keys % [:id :hierarchie :nom :sigle :service_top :service_sup]))))
 
 ;; Reset annuaire data
