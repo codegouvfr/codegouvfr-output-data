@@ -4,6 +4,14 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: LICENSE.txt
 
+;; TODO:
+;; - For each owner, add: pso, pso_id, floss_policy
+;; - Spit orgas.json (long and short)
+;; - For each repos, add: is_publiccode, is_esr, is_contrib
+;; - Spit repos.json (long and short)
+;; - define an awesome-like score
+;; - For each repos, add the Awesome score
+
 ;; Initialize atoms
 (def hosts (atom ()))
 (def owners (atom ()))
@@ -17,6 +25,9 @@
     (->> (json/parse-string (:body res) true)
          (reset! hosts))))
 
+;; Test
+(reset! hosts (take 14 (reverse @hosts)))
+
 ;; Get owners
 (doseq [{:keys [owners_url]} @hosts]
   (let [url (str owners_url "?per_page=1000")
@@ -24,7 +35,8 @@
     (when (= 200 (:status res))
       (println "Fetching owners data from" url)
       (->> (json/parse-string (:body res) true)
-           (swap! owners concat)))))
+           (map #(hash-map (:owner_url %) (dissoc % :owner_url)))
+           (reset! owners)))))
 
 ;; Get repos
 (doseq [{:keys [repositories_url repositories_count]} @hosts]
@@ -34,21 +46,13 @@
       (when (= 200 (:status res))
         (println "Fetching repos data from" url)
         (->> (json/parse-string (:body res) true)
-             (swap! repositories concat))))))
+             (map #(hash-map (:repository_url %) (dissoc % :repository_url)))
+             (reset! repositories))))))
 
-;; Print results (test)
+;; ;; Print results (test)
 (println "Hosts: " (count @hosts))
 (println "Owner: " (count @owners))
 (println "Repos: " (count @repositories))
-
-;; TODO:
-
-;; - For each owner, add: pso, pso_id, floss_policy
-;; - Spit orgas.json (long and short)
-;; - For each repos, add: is_publiccode, is_esr, is_contrib
-;; - Spit repos.json (long and short)
-;; - define an awesome-like score
-;; - For each repos, add the Awesome score
 
 ;; ;; Get comptes-organismes-pubics
 ;; (let [url "https://git.sr.ht/~codegouvfr/codegouvfr-sources/blob/main/comptes-organismes-publics_new_specs.yml"
