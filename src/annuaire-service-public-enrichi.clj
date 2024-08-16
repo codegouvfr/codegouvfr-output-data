@@ -20,8 +20,7 @@
 (def annuaire
   (->> (json/parse-string (slurp "annuaire.json") true)
        :service
-       (map (fn [a] [(keyword (:id a))
-                     (select-keys a [:hierarchie :nom :sigle])]))
+       (map (fn [a] [(:id a) (select-keys a [:hierarchie :nom :sigle])]))
        flatten
        (apply hash-map)
        atom))
@@ -30,9 +29,7 @@
 (println "Adding service_sup...")
 (doseq [a (filter #(< 0 (count (:hierarchie (val %)))) @annuaire)]
   (doseq [b (filter #(= (:type_hierarchie %) "Service Fils") (:hierarchie (val a)))]
-    (swap! annuaire update-in
-           [(keyword (:service b))]
-           conj {:service_sup (name (key a))})))
+    (swap! annuaire update-in [(:service b)] conj {:service_sup (key a)})))
 
 (def tops
   #{
@@ -77,7 +74,7 @@
 (defn get-ancestor [service_sup_id]
   (let [seen (atom #{})]
     (loop [s_id service_sup_id]
-      (let [sup (:service_sup (get @annuaire (keyword s_id)))]
+      (let [sup (:service_sup (get @annuaire s_id))]
         (if (or (nil? sup)
                 (contains? @seen s_id)
                 (some #{s_id} tops))
@@ -96,5 +93,5 @@
 (println "Creating annuaire_sup.json...")
 (spit "annuaire_sup.json"
       (json/generate-string
-       (map (fn [[k v]] (conj v {:id (name k)})) @annuaire)
+       (map (fn [[k v]] (conj v {:id k})) @annuaire)
        {:pretty true}))
