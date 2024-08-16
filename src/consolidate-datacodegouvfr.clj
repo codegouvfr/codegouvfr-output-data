@@ -32,8 +32,8 @@
     (println "Feching annuaire at" url)
     (when (= (:status res) 200)
       (->> (json/parse-string (:body res) true)
-           (map (fn [{:keys [id service_top]}]
-                  (hash-map id service_top)))
+           (map (fn [{:keys [id service_top nom]}]
+                  (hash-map id {:top service_top :nom nom})))
            (into {})))))
 
 (def annuaire_tops
@@ -42,7 +42,7 @@
     (println "Feching annuaire tops at" url)
     (when (= (:status res) 200)
       (->> (json/parse-string (:body res))
-           (into #{})))))
+           (into {})))))
 
 ;; ;; Test
 ;; (reset! hosts (take 1 @hosts))
@@ -100,12 +100,13 @@
                  #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy)))))))
 
 (doseq [[k v] (filter #(:pso_id (val %)) @owners)]
-  (let [pso_id (:pso_id v)
-        top_id (or (some annuaire_tops #{pso_id})
-                   (get annuaire pso_id)
-                   pso_id)]
+  (let [pso_id      (:pso_id v)
+        top_id      (or (some (into #{} (keys annuaire_tops)) #{pso_id})
+                        (:top (get annuaire pso_id))
+                        pso_id)
+        top_id_name (:nom (get annuaire top_id))]
     (swap! owners update-in [k]
-           conj {:pso_top_id top_id})))
+           conj {:pso_top_id top_id :pso_top_id_name top_id_name})))
 
 ;; Print results (test)
 (println "Hosts: " (count @hosts))
