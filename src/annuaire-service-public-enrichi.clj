@@ -98,4 +98,6 @@
 
 ;; Output annuaire_tops.json
 (spit "annuaire_tops.json"
-      (json/generate-string tops {:pretty true}))
+      (-> (map #(hash-map % (:nom (get @annuaire %))) tops)
+          (json/generate-string {:pretty true})))
+
