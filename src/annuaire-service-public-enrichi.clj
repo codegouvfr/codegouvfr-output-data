@@ -95,3 +95,7 @@
       (json/generate-string
        (map (fn [[k v]] (conj v {:id k})) @annuaire)
        {:pretty true}))
+
+;; Output annuaire_tops.json
+(spit "annuaire_tops.json"
+      (json/generate-string tops {:pretty true}))
