@@ -5,15 +5,15 @@
 ;; License-Filename: LICENSE.txt
 
 ;; TODO:
-;; - For each owner, add: pso, pso_id, floss_policy
 ;; - Spit orgas.json (long and short)
-;; - For each repos, add: is_publiccode, is_esr, is_contrib
+;; - For each repos, add: is_publiccode, is_esr, is_contrib?
 ;; - Spit repos.json (long and short)
 ;; - define an awesome-like score
 ;; - For each repos, add the Awesome score
 
 ;; Initialize atoms
 (def hosts (atom ()))
+(def forges (atom ()))
 (def owners (atom ()))
 (def repositories (atom ()))
 
@@ -25,8 +25,27 @@
     (->> (json/parse-string (:body res) true)
          (reset! hosts))))
 
-;; Test
-(reset! hosts (take 14 (reverse @hosts)))
+;; Get annuaire
+(def annuaire
+  (let [url "https://code.gouv.fr/data/annuaire_sup.json"
+        res (curl/get url)]
+    (println "Feching annuaire at" url)
+    (when (= (:status res) 200)
+      (->> (json/parse-string (:body res) true)
+           (map (fn [{:keys [id service_top]}]
+                  (hash-map id service_top)))
+           (into {})))))
+
+(def annuaire_tops
+  (let [url "https://code.gouv.fr/data/annuaire_tops.json"
+        res (curl/get url)]
+    (println "Feching annuaire tops at" url)
+    (when (= (:status res) 200)
+      (->> (json/parse-string (:body res))
+           (into #{})))))
+
+;; ;; Test
+;; (reset! hosts (take 1 @hosts))
 
 ;; Get owners
 (doseq [{:keys [owners_url]} @hosts]
@@ -35,7 +54,10 @@
     (when (= 200 (:status res))
       (println "Fetching owners data from" url)
       (->> (json/parse-string (:body res) true)
-           (map #(hash-map (:owner_url %) (dissoc % :owner_url)))
+           ;; Use lower-case owner URL for keys
+           (map #(hash-map (str/lower-case (:owner_url %))
+                           (dissoc % :owner_url)))
+           (into {})
            (reset! owners)))))
 
 ;; Get repos
@@ -46,27 +68,53 @@
       (when (= 200 (:status res))
         (println "Fetching repos data from" url)
         (->> (json/parse-string (:body res) true)
-             (map #(hash-map (:repository_url %) (dissoc % :repository_url)))
+             ;; Use lower-case repository URL for keys
+             (map #(hash-map (str/lower-case (:repository_url %))
+                             (dissoc % :repository_url)))
+             (into {})
              (reset! repositories))))))
 
-;; ;; Print results (test)
+;; Get comptes-organismes-pubics
+(let [url "https://git.sr.ht/~codegouvfr/codegouvfr-sources/blob/main/comptes-organismes-publics_new_specs.yml"
+      res (curl/get url)]
+  (when (= 200 (:status res))
+    (println "Fetching public sector forges from comptes-organismes-pubics.yml")
+    (->> (yaml/parse-string (:body res) :keywords false)
+         (into {})
+         (reset! forges))))
+
+;; For all owners, add pso/pso_id/floss_policy
+(doseq [[forge forge-data] @forges]
+  (let [forge (if (= forge "github.com") "github" forge)]
+    (if-let [groups (not-empty (get forge-data "groups"))]
+      (doseq [[group group-data] groups]
+        (let [owner_url (str/lower-case
+                         (format "https://data.code.gouv.fr/api/v1/hosts/%s/owners/%s"
+                                 forge group))]
+          (let [{:strs [pso pso_id floss_policy]} group-data]
+            (swap! owners update-in [owner_url]
+                   #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy)))))
+      (doseq [[k v] (filter #(str/includes? (key %) (str/lower-case forge)) @owners)]
+        (let [{:strs [pso pso_id floss_policy]} forge-data]
+          (swap! owners update-in [k]
+                 #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy)))))))
+
+(doseq [[k v] (filter #(:pso_id (val %)) @owners)]
+  (let [pso_id (:pso_id v)
+        top_id (or (some annuaire_tops #{pso_id})
+                   (get annuaire pso_id)
+                   pso_id)]
+    (swap! owners update-in [k]
+           conj {:pso_top_id top_id})))
+
+;; Print results (test)
 (println "Hosts: " (count @hosts))
 (println "Owner: " (count @owners))
 (println "Repos: " (count @repositories))
+(println "Forges: " (count @forges))
 
-;; ;; Get comptes-organismes-pubics
-;; (let [url "https://git.sr.ht/~codegouvfr/codegouvfr-sources/blob/main/comptes-organismes-publics_new_specs.yml"
-;;       res (curl/get url)]
-;;   (when (= 200 (:status res))
-;;     (println "Get metadata from comptes-organismes-pubics.yml")
-;;     (let [metadata (yaml/parse-string (:body res) :keywords false)]
-;;       (doseq [[forge data] metadata]
-;;         (if-let [groups (get data "groups")]          
-;;           ;; For each owner where html_url matches forge/group, set
-;;           ;; pso, pso_id, floss_policy
-;;           (println forge groups)
-;;           ;; Otherwise, set the hosts pso, pso_id, floss_policy for each owner
-;;           (println "No group"))))))
+;; ;; Test
+;; (doseq [a (take 4 (shuffle (into [] @owners)))] (println a "\n"))
 
 ;; ;; Add key-val to a list of hashmaps
 ;; (def users [{:name "James" :age 26}  {:name "John" :age 43}])
