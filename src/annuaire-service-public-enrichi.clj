@@ -32,7 +32,7 @@
   (doseq [b (filter #(= (:type_hierarchie %) "Service Fils") (:hierarchie (val a)))]
     (swap! annuaire update-in
            [(keyword (:service b))]
-           #(conj % {:service_sup (name (key a))}))))
+           conj {:service_sup (name (key a))})))
 
 (def tops
   #{
@@ -90,7 +90,7 @@
 (doseq [a (filter #(seq (:service_sup (val %))) @annuaire)]
   (swap! annuaire update-in
          [(key a)]
-         #(conj % {:service_top (get-ancestor (:service_sup (val a)))})))
+         conj {:service_top (get-ancestor (:service_sup (val a)))}))
 
 ;; Output annuaire_sup.json
 (println "Creating annuaire_sup.json...")
