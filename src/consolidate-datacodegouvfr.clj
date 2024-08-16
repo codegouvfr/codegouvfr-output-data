@@ -5,7 +5,6 @@
 ;; License-Filename: LICENSE.txt
 
 ;; TODO:
-;; - Spit orgas.json (long and short)
 ;; - For each repos, add: is_publiccode, is_esr, is_contrib?
 ;; - Spit repos.json (long and short)
 ;; - define an awesome-like score
@@ -23,6 +22,7 @@
   (println "Feching hosts at" url)
   (when (= (:status res) 200)
     (->> (json/parse-string (:body res) true)
+         (into ())
          (reset! hosts))))
 
 ;; Get annuaire
@@ -43,9 +43,6 @@
     (when (= (:status res) 200)
       (->> (json/parse-string (:body res))
            (into {})))))
-
-;; ;; Test
-;; (reset! hosts (take 1 @hosts))
 
 ;; Get owners
 (doseq [{:keys [owners_url]} @hosts]
@@ -99,6 +96,7 @@
           (swap! owners update-in [k]
                  #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy)))))))
 
+;; For all owners, add pso_top_id and pso_top_id_name
 (doseq [[k v] (filter #(:pso_id (val %)) @owners)]
   (let [pso_id      (:pso_id v)
         top_id      (or (some (into #{} (keys annuaire_tops)) #{pso_id})
@@ -108,15 +106,25 @@
     (swap! owners update-in [k]
            conj {:pso_top_id top_id :pso_top_id_name top_id_name})))
 
-;; Print results (test)
-(println "Hosts: " (count @hosts))
-(println "Owner: " (count @owners))
-(println "Repos: " (count @repositories))
-(println "Forges: " (count @forges))
+;; Spit orgas.json
+(->> (map (fn [[k v]]
+            {:r  (:repositories_count v)
+             :o  (:html_url v)
+             :au (:icon_url v)
+             :n  (:name v)
+             :m  (:pso_top_id_name v)
+             :l  (:login v)
+             :c  (:created_at v)
+             :d  (:description v)
+             }) @owners)
+     json/generate-string
+     (spit "orgas.json"))
 
-;; ;; Test
-;; (doseq [a (take 4 (shuffle (into [] @owners)))] (println a "\n"))
+;; ;; Test: display overview
+;; (println "Hosts: " (count @hosts))
+;; (println "Owner: " (count @owners))
+;; (println "Repos: " (count @repositories))
+;; (println "Forges: " (count @forges))
 
-;; ;; Add key-val to a list of hashmaps
-;; (def users [{:name "James" :age 26}  {:name "John" :age 43}])
-;; (map #(if (= "James" (:name %)) (conj % {:aaa "aaa"}) %) users)
+;; ;; Test: display examples
+;; (doseq [a (take 10 (shuffle (into [] @owners)))] (println a "\n"))
