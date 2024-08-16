@@ -17,43 +17,22 @@
   (io/copy stream (io/file "annuaire.json")))
 
 ;; Create a variable containing the original data
-(def annuaire-data
-  (map #(select-keys % [:id :hierarchie :nom :sigle])
-       (:service (json/parse-string (slurp "annuaire.json") true))))
-
-;; Require datalevin pod
-(require '[babashka.pods :as pods])
-(pods/load-pod 'huahaiy/datalevin "0.9.10")
-(require '[pod.huahaiy.datalevin :as d])
-
-;; Remove possibly preexistent db
-(shell/sh "rm" "-fr" "/tmp/annuaire")
-
-;; Create the new db
-(def schema {:id {:db/valueType :db.type/string :db/unique :db.unique/identity}})
-(def conn (d/get-conn "/tmp/annuaire" schema))
-(defn db [] (d/db conn))
-
-;; Feed it with annuaire data
-(try (d/transact! conn (into [] annuaire-data))
-     (catch Exception e (println (.getMessage e))))
+(def annuaire
+  (->> (json/parse-string (slurp "annuaire.json") true)
+       :service
+       (map (fn [a] [(keyword (:id a))
+                     (select-keys a [:hierarchie :nom :sigle])]))
+       flatten
+       (apply hash-map)
+       atom))
 
 ;; Add service_sup
 (println "Adding service_sup...")
-(doseq [{:keys [id hierarchie]} (filter #(< 0 (count (:hierarchie %))) annuaire-data)]
-  (doseq [{:keys [service]} (filter #(= (:type_hierarchie %) "Service Fils") hierarchie)]
-    (try
-      (d/transact! conn [{:id service :service_sup id}])
-      (catch Exception e (println (.getMessage e))))))
-
-;; Update annuaire-data
-(defn annuaire-reset-data []
-  (->> (d/q '[:find ?e :where [?e :id _]] (db))
-       (map #(d/touch (d/entity (db) (first %))))
-       (map #(select-keys % [:id :hierarchie :nom :sigle :service_top :service_sup]))))
-
-;; Reset annuaire data
-(def annuaire-data (annuaire-reset-data))
+(doseq [a (filter #(< 0 (count (:hierarchie (val %)))) @annuaire)]
+  (doseq [b (filter #(= (:type_hierarchie %) "Service Fils") (:hierarchie (val a)))]
+    (swap! annuaire update-in
+           [(keyword (:service b))]
+           #(conj % {:service_sup (name (key a))}))))
 
 (def tops
   #{
@@ -98,8 +77,7 @@
 (defn get-ancestor [service_sup_id]
   (let [seen (atom #{})]
     (loop [s_id service_sup_id]
-      (let [sup (:service_sup
-                 (first (filter #(= (:id %) s_id) annuaire-data)))]
+      (let [sup (:service_sup (get @annuaire (keyword s_id)))]
         (if (or (nil? sup)
                 (contains? @seen s_id)
                 (some #{s_id} tops))
@@ -109,15 +87,14 @@
 
 ;; Add service_top
 (println "Adding service_top...")
-(doseq [{:keys [id service_sup]}
-        (filter #(seq (:service_sup %)) annuaire-data)]
-  (d/transact! conn [{:id id :service_top
-                      (get-ancestor service_sup)}]))
-
-;; Reset annuaire-data
-(def annuaire-data (annuaire-reset-data))
+(doseq [a (filter #(seq (:service_sup (val %))) @annuaire)]
+  (swap! annuaire update-in
+         [(key a)]
+         #(conj % {:service_top (get-ancestor (:service_sup (val a)))})))
 
 ;; Output annuaire_sup.json
 (println "Creating annuaire_sup.json...")
 (spit "annuaire_sup.json"
-      (json/generate-string annuaire-data {:pretty true}))
+      (json/generate-string
+       (map (fn [[k v]] (conj v {:id (name k)})) @annuaire)
+       {:pretty true}))
