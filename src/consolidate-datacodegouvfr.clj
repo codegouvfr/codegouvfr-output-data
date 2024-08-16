@@ -4,24 +4,6 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: LICENSE.txt
 
-;; Require datalevin pod
-(require '[babashka.pods :as pods])
-(pods/load-pod 'huahaiy/datalevin "0.9.10")
-(require '[pod.huahaiy.datalevin :as d])
-
-;; ;; Remove possibly preexistent db
-;; (shell/sh "rm" "-fr" "/tmp/db")
-
-;; Create db
-(def schema {:host_url {:db/valueType :db.type/string :db/unique :db.unique/identity}
-             :uuid     {:db/valueType :db.type/string :db/unique :db.unique/identity}})
-(def conn (d/get-conn "/tmp/db" schema))
-
-;; Add utility functions
-(defn db [] (d/db conn))
-(defn replace-vals [m v r]
-  (clojure.walk/postwalk #(if (= % v) r %) m))
-
 ;; Initialize atoms
 (def hosts (atom ()))
 (def owners (atom ()))
@@ -33,12 +15,7 @@
   (println "Feching hosts at" url)
   (when (= (:status res) 200)
     (->> (json/parse-string (:body res) true)
-         (map #(replace-vals % nil ""))
          (reset! hosts))))
-
-(println "Storing hosts in db...")
-(try (doall (d/transact! conn (into [] @hosts)))
-     (catch Exception e (println (.getMessage e))))
 
 ;; Get owners
 (doseq [{:keys [owners_url]} @hosts]
@@ -48,12 +25,6 @@
       (println "Fetching owners data from" url)
       (->> (json/parse-string (:body res) true)
            (swap! owners concat)))))
-
-(println "Storing owners in db...")
-(doall
- (doseq [o (map #(replace-vals % nil "") @owners)]
-   (try (d/transact! conn [o])
-        (catch Exception e (println (.getMessage e))))))
 
 ;; Get repos
 (doseq [{:keys [repositories_url repositories_count]} @hosts]
@@ -65,20 +36,10 @@
         (->> (json/parse-string (:body res) true)
              (swap! repositories concat))))))
 
-(println "Storing repositories in db...")
-;; 62,52s user 22,38s system 37% cpu 3:48,46 total
-(doall
- (doseq [r (map #(replace-vals % nil "") @repositories)]
-   (try (d/transact! conn [r])
-        (catch Exception e (println (.getMessage e))))))
-
 ;; Print results (test)
-;; Owners:
-(println "Owner: " (count (d/q '[:find ?e :where [?e :login _]] (d/db conn))))
-;; Repos:
-(println "Owner: " (count (d/q '[:find ?e :where [?e :tags_url _]] (d/db conn))))
-;; Owners and repos:
-(println "Total: " (count (d/q '[:find ?e :where [?e :uuid _]] (d/db conn))))
+(println "Hosts: " (count @hosts))
+(println "Owner: " (count @owners))
+(println "Repos: " (count @repositories))
 
 ;; TODO:
 
@@ -86,7 +47,8 @@
 ;; - Spit orgas.json (long and short)
 ;; - For each repos, add: is_publiccode, is_esr, is_contrib
 ;; - Spit repos.json (long and short)
-;; - Remove the use of the db
+;; - define an awesome-like score
+;; - For each repos, add the Awesome score
 
 ;; ;; Get comptes-organismes-pubics
 ;; (let [url "https://git.sr.ht/~codegouvfr/codegouvfr-sources/blob/main/comptes-organismes-publics_new_specs.yml"
