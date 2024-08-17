@@ -157,7 +157,7 @@
          :p? (false? (empty? (:publiccode (:files (:metadata v)))))
          :l  (:language v)
          :li (:license v)
-         :n  (let [fn (:full_name v)] (or (last (re-matches #"([^/]+)/(.+)" fn)) fn))
+         :n  (let [fn (:full_name v)] (or (last (re-matches #".+/([^/]+)/?" fn)) fn))
          :f  (:forks_count v)
          :s  (:subscribers_count v)
          :p  (:platform v)
