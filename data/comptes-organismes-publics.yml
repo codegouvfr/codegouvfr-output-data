@@ -1,3 +1,15 @@
+# Ce fichier contient la liste des forges et des comptes
+# d'organisation référencés dans https://code.gouv.fr/sources/.
+
+# Pour chaque entrée, vous pouvez indiquer:
+# 
+# - service_of: Le nom de l'organisme public auquel elle est associée
+# - ignored_since: Si la forge doit être ignorée dans la collecte (par
+# - pso_id: l'identifiant de l'organisme public sur https://lannuaire.service-public.fr
+#
+
+# Vous pouvez proposer des ajouts à ce fichier en contribuant au dépôt.
+
 https://git.lias-lab.fr:
   ignored_since: 2024-08-09
   service_of:
