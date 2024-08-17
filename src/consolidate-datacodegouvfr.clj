@@ -21,7 +21,7 @@
            :annuaire_tops
            "https://code.gouv.fr/data/annuaire_tops.json"
            :comptes-organismes-publics
-           "https://git.sr.ht/~codegouvfr/codegouvfr-sources/blob/main/comptes-organismes-publics_new_specs.yml"})
+           "https://code.gouv.fr/data/comptes-organismes-publics.yml"})
 
 ;; Get hosts
 (let [url (:hosts urls) res (curl/get url)]
