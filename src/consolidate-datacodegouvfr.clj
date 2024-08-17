@@ -130,7 +130,7 @@
              }) @owners)
      (filter :o)
      json/generate-string
-     (spit "orgas.json"))
+     (spit "owners.json"))
 
 ;; ;; Test: display overview
 ;; (println "Hosts: " (count @hosts))
