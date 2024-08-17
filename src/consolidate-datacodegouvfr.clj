@@ -75,8 +75,8 @@
              (map #(hash-map
                     (str/lower-case (:repository_url %))
                     (-> %
-                        (assoc :plateform kind)
-                        (dissoc  :repository_url))))
+                        (assoc :platform kind)
+                        (dissoc :repository_url))))
              (into {})
              (reset! repositories))))))
 
@@ -96,12 +96,12 @@
       (doseq [[group group-data] groups]
         (let [owner_url
               (str/lower-case
-               (format (str (:hosts urls "/%s/owners/%s")) f group))]
-          (let [{:strs [pso pso_id floss_policy]} group-data]
-            (swap! owners update-in [owner_url]
-                   #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy
-                           :forge (get forge-data "forge"))))))
-      (doseq [[k v] (filter #(str/includes? (key %) (str/lower-case f)) @owners)]
+               (format (str (:hosts urls "/%s/owners/%s")) f group))
+              {:strs [pso pso_id floss_policy]} group-data]
+          (swap! owners update-in [owner_url]
+                 #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy
+                         :forge (get forge-data "forge")))))
+      (doseq [[k _] (filter #(str/includes? (key %) (str/lower-case f)) @owners)]
         (let [{:strs [pso pso_id floss_policy forge]} forge-data]
           (swap! owners update-in [k]
                  #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy
@@ -118,7 +118,7 @@
            conj {:pso_top_id top_id :pso_top_id_name top_id_name})))
 
 ;; Spit owners.json
-(->>  ;; Keep those with orga URL and repositories count > 0
+(->> ;; Keep those with orga URL and repositories count > 0
  (filter (fn [[_ v]]
            (and (not-empty (:html_url v))
                 (> (:repositories_count v) 0)))
@@ -145,33 +145,28 @@
 
 ;; Spit repositories.json
 (->>
+ @repositories
+ (filter #(not-empty (:owner_url (val %))))
  (map (fn [[_ v]]
         {:u  (:updated_at v)
          :d  (:description v)
          :a? (:archived v)
          :f? (:fork v)
-         ;; TODO: Don't use esr and lib on the UI
-         ;; :e?  (:is_esr v)
-         ;; :l?  (:is_lib v)
-         ;; TODO: use template on the UI instead of lib
          :t? (:template v)
-         ;; TODO: Don't use reuses on the UI
-         ;; :re (:reuses v)
-         :c? (not (empty? (:contributing (:files (:metadata v)))))
-         :p? (not (empty? (:publiccode (:files (:metadata v)))))
+         :c? (false? (empty? (:contributing (:files (:metadata v)))))
+         :p? (false? (empty? (:publiccode (:files (:metadata v)))))
          :l  (:language v)
          :li (:license v)
          :n  (let [fn (:full_name v)] (or (last (re-matches #"([^/]+)/(.+)" fn)) fn))
          :f  (:forks_count v)
          :s  (:subscribers_count v)
-         :p  (:plateform v)
+         :p  (:platform v)
          :r  (:html_url v)
          :o  (when-let [[_ host owner]
                         (re-matches (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
                                     (:owner_url v))]
                (let [host (if (= host "GitHub") "github.com" host)]
-                 (str "https://" host "/" owner)))})
-      @repositories)
+                 (str "https://" host "/" owner)))}))
  json/generate-string
  (spit "repositories.json"))
 
@@ -181,11 +176,11 @@
   (let [n (if (= "GitHub" name) "github.com" name)]
     (spit "platforms.csv" (str n "," kind "\n") :append true)))
 
-;; ;; Test: display overview
-;; (println "Hosts: " (count @hosts))
-;; (println "Owner: " (count @owners))
-;; (println "Repos: " (count @repositories))
-;; (println "Forges: " (count @forges))
+;; Test: display overview
+(println "Hosts: " (count @hosts))
+(println "Owner: " (count @owners))
+(println "Repos: " (count @repositories))
+(println "Forges: " (count @forges))
 
 ;; ;; Test: display examples
 ;; (doseq [a (take 10 (shuffle (into [] @owners)))] (println a "\n"))
