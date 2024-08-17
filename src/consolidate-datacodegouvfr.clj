@@ -128,7 +128,8 @@
              ;; New data
              :pso (:pso v)
              }) @owners)
-     (filter :o)
+     (filter :o) ;; Keep those with orga URL
+     (filter #(> (:r %) 0)) ;; Keep those with repos
      json/generate-string
      (spit "owners.json"))
 
