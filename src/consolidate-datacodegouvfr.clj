@@ -143,9 +143,6 @@
  json/generate-string
  (spit "owners.json"))
 
-(not (empty? "smdlfkjsdf"))
-(not-empty "slkjsdf")
-
 ;; Spit repositories.json
 (->>
  (map (fn [[_ v]]
