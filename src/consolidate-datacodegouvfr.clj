@@ -14,9 +14,17 @@
 (def owners (atom ()))
 (def repositories (atom ()))
 
+(def urls {:hosts
+           "https://data.code.gouv.fr/api/v1/hosts"
+           :annuaire_sup
+           "https://code.gouv.fr/data/annuaire_sup.json"
+           :annuaire_tops
+           "https://code.gouv.fr/data/annuaire_tops.json"
+           :comptes-organismes-publics
+           "https://git.sr.ht/~codegouvfr/codegouvfr-sources/blob/main/comptes-organismes-publics_new_specs.yml"})
+
 ;; Get hosts
-(let [url "https://data.code.gouv.fr/api/v1/hosts"
-      res (curl/get url)]
+(let [url (:hosts urls) res (curl/get url)]
   (println "Feching hosts at" url)
   (when (= (:status res) 200)
     (->> (json/parse-string (:body res) true)
@@ -27,8 +35,7 @@
 
 ;; Get annuaire
 (def annuaire
-  (let [url "https://code.gouv.fr/data/annuaire_sup.json"
-        res (curl/get url)]
+  (let [url (:annuaire_sup urls) res (curl/get url)]
     (println "Feching annuaire at" url)
     (when (= (:status res) 200)
       (->> (json/parse-string (:body res) true)
@@ -37,8 +44,7 @@
            (into {})))))
 
 (def annuaire_tops
-  (let [url "https://code.gouv.fr/data/annuaire_tops.json"
-        res (curl/get url)]
+  (let [url (:annuaire_tops urls) res (curl/get url)]
     (println "Feching annuaire tops at" url)
     (when (= (:status res) 200)
       (->> (json/parse-string (:body res))
@@ -75,7 +81,7 @@
              (reset! repositories))))))
 
 ;; Get comptes-organismes-pubics
-(let [url "https://git.sr.ht/~codegouvfr/codegouvfr-sources/blob/main/comptes-organismes-publics_new_specs.yml"
+(let [url (:comptes-organismes-publics urls)
       res (curl/get url)]
   (when (= 200 (:status res))
     (println "Fetching public sector forges from comptes-organismes-pubics.yml")
@@ -90,7 +96,7 @@
       (doseq [[group group-data] groups]
         (let [owner_url
               (str/lower-case
-               (format "https://data.code.gouv.fr/api/v1/hosts/%s/owners/%s" f group))]
+               (format (str (:hosts urls "/%s/owners/%s")) f group))]
           (let [{:strs [pso pso_id floss_policy]} group-data]
             (swap! owners update-in [owner_url]
                    #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy
@@ -137,6 +143,9 @@
  json/generate-string
  (spit "owners.json"))
 
+(not (empty? "smdlfkjsdf"))
+(not-empty "slkjsdf")
+
 ;; Spit repositories.json
 (->>
  (map (fn [[_ v]]
@@ -147,10 +156,12 @@
          ;; TODO: Don't use esr and lib on the UI
          ;; :e?  (:is_esr v)
          ;; :l?  (:is_lib v)
-         ;; TODO: use template?
-         ;; :t?  (:template v)
-         :c? (:contributing (:files (:metadata v)))
-         :p? (:publiccode (:files (:metadata v)))
+         ;; TODO: use template on the UI instead of lib
+         :t? (:template v)
+         ;; TODO: Don't use reuses on the UI
+         ;; :re (:reuses v)
+         :c? (not (empty? (:contributing (:files (:metadata v)))))
+         :p? (not (empty? (:publiccode (:files (:metadata v)))))
          :l  (:language v)
          :li (:license v)
          :n  (let [fn (:full_name v)] (or (last (re-matches #"([^/]+)/(.+)" fn)) fn))
@@ -159,13 +170,11 @@
          :p  (:plateform v)
          :r  (:html_url v)
          :o  (when-let [[_ host owner]
-                        (re-matches #"https://data.code.gouv.fr/api/v1/hosts/([^/]+)/owners/([^/]+)"
+                        (re-matches (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
                                     (:owner_url v))]
                (let [host (if (= host "GitHub") "github.com" host)]
-                 (str "https://" host "/" owner)))
-         ;; TODO: Don't use reuses on the UI
-         ;; :re (:reuses v)
-         }) @repositories)
+                 (str "https://" host "/" owner)))})
+      @repositories)
  json/generate-string
  (spit "repositories.json"))
 
