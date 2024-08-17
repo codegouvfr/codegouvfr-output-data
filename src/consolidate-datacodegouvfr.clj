@@ -29,7 +29,7 @@
   (when (= (:status res) 200)
     (->> (json/parse-string (:body res) true)
          (into ())
-         ;; Test
+         ;; Test:
          ;; (take 1)
          (reset! hosts))))
 
@@ -56,12 +56,12 @@
         res (curl/get url)]
     (when (= 200 (:status res))
       (println "Fetching owners data from" url)
-      (->> (json/parse-string (:body res) true)
-           ;; Use lower-case owner URL for keys
-           (map #(hash-map (str/lower-case (:owner_url %))
-                           (dissoc % :owner_url)))
-           (into {})
-           (reset! owners)))))
+      (doseq [e (json/parse-string (:body res) true)]
+        (swap! owners conj
+               ;; Use lower-case owner URL for keys
+               (hash-map (str/lower-case (:owner_url e))
+                         (dissoc e :owner_url)))))))
+(reset! owners (into {} @owners))
 
 ;; Get repos
 (doseq [{:keys [repositories_url repositories_count kind]} @hosts]
@@ -70,15 +70,15 @@
           res (try (curl/get url) (catch Exception e (println (.getMessage e))))]
       (when (= 200 (:status res))
         (println "Fetching repos data from" url)
-        (->> (json/parse-string (:body res) true)
-             ;; Use lower-case repository URL for keys
-             (map #(hash-map
-                    (str/lower-case (:repository_url %))
-                    (-> %
-                        (assoc :platform kind)
-                        (dissoc :repository_url))))
-             (into {})
-             (reset! repositories))))))
+        (doseq [e (json/parse-string (:body res) true)]
+          (swap! repositories conj
+                 (hash-map
+                  ;; Use lower-case repository URL for keys
+                  (str/lower-case (:repository_url e))
+                  (-> e
+                      (assoc :platform kind)
+                      (dissoc :repository_url)))))))))
+(reset! repositories (into {} @repositories))
 
 ;; Get comptes-organismes-pubics
 (let [url (:comptes-organismes-publics urls)
@@ -178,9 +178,9 @@
 
 ;; Test: display overview
 (println "Hosts: " (count @hosts))
-(println "Owner: " (count @owners))
-(println "Repos: " (count @repositories))
+(println "Owners: " (count @owners))
+(println "Repositories: " (count @repositories))
 (println "Forges: " (count @forges))
 
-;; ;; Test: display examples
-;; (doseq [a (take 10 (shuffle (into [] @owners)))] (println a "\n"))
+;; ;; ;; Test: display examples
+;; ;; (doseq [a (take 10 (shuffle (into [] @owners)))] (println a "\n"))
