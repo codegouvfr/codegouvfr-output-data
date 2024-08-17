@@ -1,14 +1,29 @@
 # Ce fichier contient la liste des forges et des comptes
 # d'organisation référencés dans https://code.gouv.fr/sources/.
-
-# Pour chaque entrée, vous pouvez indiquer:
-# 
-# - service_of: Le nom de l'organisme public auquel elle est associée
-# - ignored_since: Si la forge doit être ignorée dans la collecte (par
-# - pso_id: l'identifiant de l'organisme public sur https://lannuaire.service-public.fr
 #
-
 # Vous pouvez proposer des ajouts à ce fichier en contribuant au dépôt.
+#
+# Pour chaque entrée, vous pouvez indiquer :
+#
+# - service_of:
+#   Le nom de l'organisme public auquel elle est associée
+#
+# - ignored_since:
+#   Si la forge doit être ignorée (is elle renvoie une erreur 500
+#   par exemple.)
+#
+# - pso_id:
+#   L'identifiant de l'organisme sur https://lannuaire.service-public.fr
+#
+# Le "service_of" est facultatif.
+# Le "pso_id" est fortement recommandé.
+# Le "ignored_since" ne doit être ajouté que si nécessaire.
+#
+# En cas de doute, vous pouvez nous écrire: contact@code.gouv.fr
+#
+# Le script src/export-comptes-organismes-publics.clj exporte ce
+# fichier dans un fichier du même nom respectant les spécifications
+# documentées dans docs/comptes-organismes-publics_specs.md.
 
 https://git.lias-lab.fr:
   ignored_since: 2024-08-09
