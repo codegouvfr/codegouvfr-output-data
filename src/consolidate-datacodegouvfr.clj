@@ -23,6 +23,8 @@
   (when (= (:status res) 200)
     (->> (json/parse-string (:body res) true)
          (into ())
+         ;; Test
+         ;; (take 1)
          (reset! hosts))))
 
 ;; Get annuaire
@@ -81,20 +83,22 @@
          (reset! forges))))
 
 ;; For all owners, add pso/pso_id/floss_policy
-(doseq [[forge forge-data] @forges]
-  (let [forge (if (= forge "github.com") "github" forge)]
-    (if-let [groups (not-empty (get forge-data "groups"))]
+(doseq [[f forge-data] @forges]
+  (let [f (if (= f "github.com") "github" f)]
+    (if-let [groups (get forge-data "groups")]
       (doseq [[group group-data] groups]
-        (let [owner_url (str/lower-case
-                         (format "https://data.code.gouv.fr/api/v1/hosts/%s/owners/%s"
-                                 forge group))]
+        (let [owner_url
+              (str/lower-case
+               (format "https://data.code.gouv.fr/api/v1/hosts/%s/owners/%s" f group))]
           (let [{:strs [pso pso_id floss_policy]} group-data]
             (swap! owners update-in [owner_url]
-                   #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy)))))
-      (doseq [[k v] (filter #(str/includes? (key %) (str/lower-case forge)) @owners)]
-        (let [{:strs [pso pso_id floss_policy]} forge-data]
+                   #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy
+                           :forge (get forge-data "forge"))))))
+      (doseq [[k v] (filter #(str/includes? (key %) (str/lower-case f)) @owners)]
+        (let [{:strs [pso pso_id floss_policy forge]} forge-data]
           (swap! owners update-in [k]
-                 #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy)))))))
+                 #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy
+                         :forge forge)))))))
 
 ;; For all owners, add pso_top_id and pso_top_id_name
 (doseq [[k v] (filter #(:pso_id (val %)) @owners)]
@@ -108,15 +112,23 @@
 
 ;; Spit orgas.json
 (->> (map (fn [[k v]]
-            {:r  (:repositories_count v)
-             :o  (:html_url v)
-             :au (:icon_url v)
-             :n  (:name v)
-             :m  (:pso_top_id_name v)
-             :l  (:login v)
-             :c  (:created_at v)
-             :d  (:description v)
+            {:r   (:repositories_count v)
+             :o   (:html_url v)
+             :au  (:icon_url v)
+             :n   (:name v)
+             :m   (:pso_top_id_name v)
+             :l   (:login v)
+             :c   (:created_at v)
+             :d   (:description v)
+             :f   (:floss_policy v)
+             :h   (:website v)
+             :p   (:forge v)
+             :e   (:email v)
+             :a   (:location v)
+             ;; New data
+             :pso (:pso v)
              }) @owners)
+     (filter :o)
      json/generate-string
      (spit "orgas.json"))
 
