@@ -16,16 +16,15 @@ facilement des scripts écrits en Clojure.
 
 # Outils
 
-## `catalogue-gouvtech-libre`
+## consolidate-datacodegouvfr
 
-Extrait les logiciels libres de l'ancien catalogue GouvTech.
+Créer des fichiers `json` contenant un extrait consolidé des métadonnées exposées sur https://data.code.gouv.fr..
 
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/catalogue-gouvtech-libre.clj`
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/consolidate-datacodegouvfr.clj`
 
 ## `sill-prestataires`
 
-Fusionner les données des prestataires SILL venant de l'ADULLACT et du
-CNLL.
+Fusionner les données des prestataires SILL venant de l'ADULLACT et du CNLL.
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/sill-prestataires.clj`
 
