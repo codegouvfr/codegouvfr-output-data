@@ -16,6 +16,12 @@ facilement des scripts écrits en Clojure.
 
 # Outils
 
+## export-comptes-organismes-publics.clj
+
+Prend le fichier .yml source qui liste les comptes d'organisation hébergeant des codes sources d'organismes publics et l'exporte dans un fichier .yml mis en forme poue https://data.code.gouv.fr.
+
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/export-comptes-organismes-publics.clj`
+
 ## consolidate-datacodegouvfr
 
 Créer des fichiers `json` contenant un extrait consolidé des métadonnées exposées sur https://data.code.gouv.fr..
