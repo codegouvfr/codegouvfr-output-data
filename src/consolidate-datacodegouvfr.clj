@@ -178,6 +178,12 @@
  json/generate-string
  (spit "repositories.json"))
 
+;; Output platforms.csv
+(shell/sh "rm" "-f" "platforms.csv")
+(doseq [{:keys [name kind]} @hosts]
+  (let [n (if (= "GitHub" name) "github.com" name)]
+    (spit "platforms.csv" (str n "," kind "\n") :append true)))
+
 ;; ;; Test: display overview
 ;; (println "Hosts: " (count @hosts))
 ;; (println "Owner: " (count @owners))
