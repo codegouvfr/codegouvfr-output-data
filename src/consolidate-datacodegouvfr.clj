@@ -5,10 +5,8 @@
 ;; License-Filename: LICENSE.txt
 
 ;; TODO:
-;; - For each repos, add: is_publiccode, is_esr, is_contrib?
-;; - Spit repos.json (long and short)
-;; - define an awesome-like score
-;; - For each repos, add the Awesome score
+;; - spit tags.json for awesome software
+;; - define and add an awesome-like score?
 
 ;; Initialize atoms
 (def hosts (atom ()))
@@ -60,7 +58,7 @@
            (reset! owners)))))
 
 ;; Get repos
-(doseq [{:keys [repositories_url repositories_count]} @hosts]
+(doseq [{:keys [repositories_url repositories_count kind]} @hosts]
   (dotimes [n (int (clojure.math/floor (+ 1 (/ (- repositories_count 1) 1000))))]
     (let [url (str repositories_url (format "?page=%s&per_page=1000" (+ n 1)))
           res (try (curl/get url) (catch Exception e (println (.getMessage e))))]
@@ -68,8 +66,11 @@
         (println "Fetching repos data from" url)
         (->> (json/parse-string (:body res) true)
              ;; Use lower-case repository URL for keys
-             (map #(hash-map (str/lower-case (:repository_url %))
-                             (dissoc % :repository_url)))
+             (map #(hash-map
+                    (str/lower-case (:repository_url %))
+                    (-> %
+                        (assoc :plateform kind)
+                        (dissoc  :repository_url))))
              (into {})
              (reset! repositories))))))
 
@@ -110,28 +111,63 @@
     (swap! owners update-in [k]
            conj {:pso_top_id top_id :pso_top_id_name top_id_name})))
 
-;; Spit orgas.json
-(->> (map (fn [[k v]]
-            {:r   (:repositories_count v)
-             :o   (:html_url v)
-             :au  (:icon_url v)
-             :n   (:name v)
-             :m   (:pso_top_id_name v)
-             :l   (:login v)
-             :c   (:created_at v)
-             :d   (:description v)
-             :f   (:floss_policy v)
-             :h   (:website v)
-             :p   (:forge v)
-             :e   (:email v)
-             :a   (:location v)
-             ;; New data
-             :pso (:pso v)
-             }) @owners)
-     (filter :o) ;; Keep those with orga URL
-     (filter #(> (:r %) 0)) ;; Keep those with repos
-     json/generate-string
-     (spit "owners.json"))
+;; Spit owners.json
+(->>  ;; Keep those with orga URL and repositories count > 0
+ (filter (fn [[_ v]]
+           (and (not-empty (:html_url v))
+                (> (:repositories_count v) 0)))
+         @owners)
+ (map (fn [[_ v]]
+        {:r   (:repositories_count v)
+         :o   (:html_url v)
+         :au  (:icon_url v)
+         :n   (:name v)
+         :m   (:pso_top_id_name v)
+         :l   (:login v)
+         :c   (:created_at v)
+         :d   (:description v)
+         :f   (:floss_policy v)
+         :h   (:website v)
+         :p   (:forge v)
+         :e   (:email v)
+         :a   (:location v)
+         ;; TODO: New data pso
+         ;; Use it for the search in the UI
+         :pso (:pso v)}))
+ json/generate-string
+ (spit "owners.json"))
+
+;; Spit repositories.json
+(->>
+ (map (fn [[_ v]]
+        {:u  (:updated_at v)
+         :d  (:description v)
+         :a? (:archived v)
+         :f? (:fork v)
+         ;; TODO: Don't use esr and lib on the UI
+         ;; :e?  (:is_esr v)
+         ;; :l?  (:is_lib v)
+         ;; TODO: use template?
+         ;; :t?  (:template v)
+         :c? (:contributing (:files (:metadata v)))
+         :p? (:publiccode (:files (:metadata v)))
+         :l  (:language v)
+         :li (:license v)
+         :n  (let [fn (:full_name v)] (or (last (re-matches #"([^/]+)/(.+)" fn)) fn))
+         :f  (:forks_count v)
+         :s  (:subscribers_count v)
+         :p  (:plateform v)
+         :r  (:html_url v)
+         :o  (when-let [[_ host owner]
+                        (re-matches #"https://data.code.gouv.fr/api/v1/hosts/([^/]+)/owners/([^/]+)"
+                                    (:owner_url v))]
+               (let [host (if (= host "GitHub") "github.com" host)]
+                 (str "https://" host "/" owner)))
+         ;; TODO: Don't use reuses on the UI
+         ;; :re (:reuses v)
+         }) @repositories)
+ json/generate-string
+ (spit "repositories.json"))
 
 ;; ;; Test: display overview
 ;; (println "Hosts: " (count @hosts))
