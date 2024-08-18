@@ -25,7 +25,7 @@
 
 (if-let [orga-name (:o opts)]
   (let [repos-file (str (System/getenv "HOME") "/.repos.json")
-        repos-json (try (slurp repos-file) (catch Exception e nil))]
+        repos-json (try (slurp repos-file) (catch Exception _ nil))]
     (if (and (not-empty repos-json) (not (true? (:r opts))))
       (println "Read ~/.repos.json: done")
       (do (println "Store repos data in ~/.repos.json")

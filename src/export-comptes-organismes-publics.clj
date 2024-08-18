@@ -34,7 +34,7 @@
             (spt! (str indent "pso: " pso "\n")))
           (when-let [pso_id (first (get properties "pso_id"))]
             (spt! (str indent "pso_id: " pso_id "\n")))
-          (when-let [floss (first (get properties "floss_policy"))]
+          (when (first (get properties "floss_policy"))
             (spt! (str indent "floss_policy: " (first (get properties "floss_policy")) "\n"))))))))
 
 (doseq [forge orgs]
