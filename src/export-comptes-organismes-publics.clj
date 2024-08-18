@@ -9,10 +9,11 @@
    (yaml/parse-string (slurp spec-filename) :keywords false)
    (group-by #(last (re-find #"https://([^/]+)" (first %))))))
 
-(defn spt! [s] (spit "comptes-organismes-publics.yml" s :append true))
-
 (def general-purpose-forges
   '("github.com" "gitlab.com" "sr.ht" "framagit.org" "gitlab.adullact.net" "gitlab.ow2.org"))
+
+;; Convenient spit variation
+(defn spt! [s] (spit "comptes-organismes-publics.yml" s :append true))
 
 (defn write-props! [forge & without-groups?]
   (let [re (if without-groups? #"https://([^/]+)" #"https://[^/]+/([^:]+)")]
