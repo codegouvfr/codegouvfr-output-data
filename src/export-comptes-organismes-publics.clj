@@ -1,6 +1,12 @@
 #!/usr/bin/env bb
 
-;; Set the spec file name
+;; Set the file name where to write the exported file
+(def dest-file-name "comptes-organismes-publics.yml")
+
+;; Remove any previous version
+(shell/sh "rm" "-f" dest-file-name)
+
+;; Set the main yml source file
 (def spec-filename "https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/data/comptes-organismes-publics.yml")
 
 ;; Get all forges by domain names
