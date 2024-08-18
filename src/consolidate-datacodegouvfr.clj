@@ -143,7 +143,8 @@
 ;; Spit repositories.json
 (->>
  @repositories
- (filter #(not-empty (:owner_url (val %))))
+ (filter #(and (not-empty (:owner_url (val %)))
+               (not-empty (:readme (:files (:metadata (val %)))))))
  (map (fn [[_ v]]
         {:u  (:updated_at v)
          :d  (:description v)
