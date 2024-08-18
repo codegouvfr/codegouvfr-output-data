@@ -11,8 +11,8 @@
 ;; Initialize atoms
 (def hosts (atom ()))
 (def forges (atom ()))
-(def owners (atom ()))
-(def repositories (atom ()))
+(def owners (atom {}))
+(def repositories (atom {}))
 
 (def urls {:hosts
            "https://data.code.gouv.fr/api/v1/hosts"
@@ -57,11 +57,10 @@
     (when (= 200 (:status res))
       (println "Fetching owners data from" url)
       (doseq [e (json/parse-string (:body res) true)]
-        (swap! owners conj
+        (swap! owners assoc
                ;; Use lower-case owner URL for keys
-               (hash-map (str/lower-case (:owner_url e))
-                         (dissoc e :owner_url)))))))
-(reset! owners (into {} @owners))
+               (str/lower-case (:owner_url e))
+               (dissoc e :owner_url))))))
 
 ;; Get repos
 (doseq [{:keys [repositories_url repositories_count kind]} @hosts]
@@ -71,14 +70,12 @@
       (when (= 200 (:status res))
         (println "Fetching repos data from" url)
         (doseq [e (json/parse-string (:body res) true)]
-          (swap! repositories conj
-                 (hash-map
-                  ;; Use lower-case repository URL for keys
-                  (str/lower-case (:repository_url e))
-                  (-> e
-                      (assoc :platform kind)
-                      (dissoc :repository_url)))))))))
-(reset! repositories (into {} @repositories))
+          (swap! repositories assoc
+                 ;; Use lower-case repository URL for keys
+                 (str/lower-case (:repository_url e))
+                 (-> e
+                     (assoc :platform kind)
+                     (dissoc :repository_url))))))))
 
 ;; Get comptes-organismes-pubics
 (let [url (:comptes-organismes-publics urls)
