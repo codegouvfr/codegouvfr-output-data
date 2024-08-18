@@ -143,12 +143,13 @@
 ;; Spit repositories.json
 (->>
  @repositories
- (filter #(and (not-empty (:owner_url (val %)))
-               (not-empty (:readme (:files (:metadata (val %)))))))
+ (filter #(let [v (val %)]
+            (and (not-empty (:owner_url v))
+                 (not-empty (:readme (:files (:metadata v))))
+                 (not (:archived v)))))
  (map (fn [[_ v]]
         {:u  (:updated_at v)
          :d  (:description v)
-         :a? (:archived v)
          :f? (:fork v)
          :t? (:template v)
          :c? (false? (empty? (:contributing (:files (:metadata v)))))
