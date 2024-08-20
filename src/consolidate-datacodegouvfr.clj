@@ -8,6 +8,9 @@
 ;; - spit tags.json for awesome software
 ;; - define and add an awesome-like score?
 
+(deps/add-deps '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
+(require '[clj-rss.core :as rss])
+
 ;; Initialize atoms
 (def hosts (atom ()))
 (def forges (atom ()))
@@ -140,6 +143,26 @@
  json/generate-string
  (spit "owners.json"))
 
+(defn toInst [^String s]
+  (.toInstant (clojure.instant/read-instant-date s)))
+
+(->> @owners
+     (filter #(:created_at (val %)))
+     (sort-by #(clojure.instant/read-instant-date (:created_at (val %))))
+     reverse
+     (take 10)
+     (map (fn [[o o-data]]
+            {:title       (str "Nouveau compte dans code.gouv.fr : " (:name o-data))
+             :link        (:html_url o-data)
+             :guid        o
+             :description (:description o-data)
+             :pubDate     (toInst (:created_at o-data))}))
+     (rss/channel-xml
+      {:title       "code.gouv.fr/sources - Nouveaux comptes d'organisation"
+       :link        "https://code.gouv.fr/data/latest-repositories.xml"
+       :description "code.gouv.fr/sources - Nouveaux comptes d'organisation"})
+     (spit "latest-owners.xml"))
+
 ;; Spit repositories.json
 (->>
  @repositories
@@ -168,6 +191,24 @@
                  (str "https://" host "/" owner)))}))
  json/generate-string
  (spit "repositories.json"))
+
+(->> @repositories
+     (filter #(:created_at (val %)))
+     (sort-by #(clojure.instant/read-instant-date (:created_at (val %))))
+     reverse
+     (take 10)
+     (map (fn [[r r-data]]
+            (let [name (let [fn (:full_name r-data)] (or (last (re-matches #".+/([^/]+)/?" fn)) fn))]
+              {:title       (str "Nouveau dépôt de code source dans code.gouv.fr : " name)
+               :link        (:html_url r-data)
+               :guid        r
+               :description (:description r-data)
+               :pubDate     (toInst (:created_at r-data))})))
+     (rss/channel-xml
+      {:title       "code.gouv.fr/sources - Nouveaux dépôts de code source"
+       :link        "https://code.gouv.fr/data/latest-repositories.xml"
+       :description "code.gouv.fr/sources - Nouveaux dépôts de code source"})
+     (spit "latest-repositories.xml"))
 
 ;; Output platforms.csv
 (shell/sh "rm" "-f" "platforms.csv")
