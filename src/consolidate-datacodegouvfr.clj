@@ -25,7 +25,7 @@
 
 ;; Get hosts
 (let [url (:hosts urls) res (curl/get url)]
-  (println "Feching hosts at" url)
+  (println "Fetching hosts at" url)
   (when (= (:status res) 200)
     (->> (json/parse-string (:body res) true)
          (into ())
@@ -36,7 +36,7 @@
 ;; Get annuaire
 (def annuaire
   (let [url (:annuaire_sup urls) res (curl/get url)]
-    (println "Feching annuaire at" url)
+    (println "Fetching annuaire at" url)
     (when (= (:status res) 200)
       (->> (json/parse-string (:body res) true)
            (map (fn [{:keys [id service_top nom]}]
@@ -45,7 +45,7 @@
 
 (def annuaire_tops
   (let [url (:annuaire_tops urls) res (curl/get url)]
-    (println "Feching annuaire tops at" url)
+    (println "Fetching annuaire tops at" url)
     (when (= (:status res) 200)
       (->> (json/parse-string (:body res))
            (into {})))))
