@@ -210,11 +210,11 @@
        :description "code.gouv.fr/sources - Nouveaux dépôts de code source"})
      (spit "latest-repositories.xml"))
 
-;; Output platforms.csv
-(shell/sh "rm" "-f" "platforms.csv")
+;; Output forges.csv
+(shell/sh "rm" "-f" "forges.csv")
 (doseq [{:keys [name kind]} @hosts]
   (let [n (if (= "GitHub" name) "github.com" name)]
-    (spit "platforms.csv" (str n "," kind "\n") :append true)))
+    (spit "forges.csv" (str n "," kind "\n") :append true)))
 
 ;; Test: display overview
 (println "Hosts: " (count @hosts))
