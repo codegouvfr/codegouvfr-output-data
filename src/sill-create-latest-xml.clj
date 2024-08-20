@@ -1,5 +1,7 @@
 #!/usr/bin/env bb
 
+(deps/add-deps '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
+
 (require '[clj-rss.core :as rss])
 
 (if-let [sill (try (:body (curl/get "https://code.gouv.fr/sill/api/sill.json"))
