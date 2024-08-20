@@ -34,6 +34,12 @@ Fusionner les données des prestataires SILL venant de l'ADULLACT et du CNLL.
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/sill-prestataires.clj`
 
+## `sill-create-latest-xml.clj`
+
+Exporter le flux RSS `latest-sill.xml` à partir de https://code.gouv.fr/sill/api/sill.json.
+
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/sill-create-latest-xml.clj`
+
 ## `annuaire-service-public-enrichi`
 
 Enrichi le `.json` de l'annuaire des services publics en ajoutant les
