@@ -123,8 +123,9 @@
            (and (not-empty (:html_url v))
                 (> (:repositories_count v) 0)))
          @owners)
- (map (fn [[_ v]]
-        {:r   (:repositories_count v)
+ (map (fn [[k v]]
+        {:id  k
+         :r   (:repositories_count v)
          :o   (:html_url v)
          :au  (:icon_url v)
          :n   (:name v)
@@ -179,6 +180,7 @@
          :p? (false? (empty? (:publiccode (:files (:metadata v)))))
          :l  (:language v)
          :li (:license v)
+         :fn (:full_name v)
          :n  (let [fn (:full_name v)] (or (last (re-matches #".+/([^/]+)/?" fn)) fn))
          :f  (:forks_count v)
          :s  (:subscribers_count v)
