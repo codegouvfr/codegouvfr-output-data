@@ -124,23 +124,25 @@
                 (> (:repositories_count v) 0)))
          @owners)
  (map (fn [[k v]]
-        {:id  k
-         :r   (:repositories_count v)
-         :o   (:html_url v)
-         :au  (:icon_url v)
-         :n   (:name v)
-         :m   (:pso_top_id_name v)
-         :l   (:login v)
-         :c   (:created_at v)
-         :d   (:description v)
-         :f   (:floss_policy v)
-         :h   (:website v)
-         :p   (:forge v)
-         :e   (:email v)
-         :a   (:location v)
-         ;; TODO: New data pso
-         ;; Use it for the search in the UI
-         :pso (:pso v)}))
+        (let [d  (:description v)
+              dd (if (not-empty d) (subs d 0 (min (count d) 200)) "")]
+          {:id  k
+           :r   (:repositories_count v)
+           :o   (:html_url v)
+           :au  (:icon_url v)
+           :n   (:name v)
+           :m   (:pso_top_id_name v)
+           :l   (:login v)
+           :c   (:created_at v)
+           :d   dd
+           :f   (:floss_policy v)
+           :h   (:website v)
+           :p   (:forge v)
+           :e   (:email v)
+           :a   (:location v)
+           ;; TODO: New data pso
+           ;; Use it for the search in the UI
+           :pso (:pso v)})))
  json/generate-string
  (spit "owners.json"))
 
@@ -172,25 +174,29 @@
                  (not-empty (:readme (:files (:metadata v))))
                  (not (:archived v)))))
  (map (fn [[_ v]]
-        {:u  (:updated_at v)
-         :d  (:description v)
-         :f? (:fork v)
-         :t? (:template v)
-         :c? (false? (empty? (:contributing (:files (:metadata v)))))
-         :p? (false? (empty? (:publiccode (:files (:metadata v)))))
-         :l  (:language v)
-         :li (:license v)
-         :fn (:full_name v)
-         :n  (let [fn (:full_name v)] (or (last (re-matches #".+/([^/]+)/?" fn)) fn))
-         :f  (:forks_count v)
-         :s  (:subscribers_count v)
-         :p  (:platform v)
-         :r  (:html_url v)
-         :o  (when-let [[_ host owner]
-                        (re-matches (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
-                                    (:owner_url v))]
-               (let [host (if (= host "GitHub") "github.com" host)]
-                 (str "https://" host "/" owner)))}))
+        (let [d  (:description v)
+              dd (if (not-empty d) (subs d 0 (min (count d) 200)) "")
+              fn (:full_name v)
+              n  (or (last (re-matches #".+/([^/]+)/?" fn)) fn)
+              md (:metadata v)]
+          {:u  (:updated_at v)
+           :d  dd
+           :f? (:fork v)
+           :t? (:template v)
+           :c? (false? (empty? (:contributing (:files md))))
+           :p? (false? (empty? (:publiccode (:files md))))
+           :l  (:language v)
+           :li (:license v)
+           :fn fn
+           :n  n
+           :f  (:forks_count v)
+           :s  (:subscribers_count v)
+           :p  (:platform v)
+           :o  (when-let [[_ host owner]
+                          (re-matches (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
+                                      (:owner_url v))]
+                 (let [host (if (= host "GitHub") "github.com" host)]
+                   (str "https://" host "/" owner)))})))
  json/generate-string
  (spit "repositories.json"))
 
