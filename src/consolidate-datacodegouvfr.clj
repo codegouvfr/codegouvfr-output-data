@@ -169,6 +169,24 @@
        :description "code.gouv.fr/sources - Nouveaux comptes d'organisation"})
      (spit "latest-owners.xml"))
 
+(defn compute-awesome-score [v]
+  (let [files  (:files (:metadata v))
+        high   1000
+        medium 100
+        low    10]
+    ;; We assume a readme and not archived
+    (+ (if (:license files) high 0)
+       (if (:publiccode files) medium 0)
+       (if (:contributing files) medium 0)
+       (if (:template v) (* medium 2) 0)
+       (if (not-empty (:description v)) 0 (- medium))
+       (if-let [f (:forks_count v)]
+         (condp < f 1000 high 100 medium 10 low 0)
+         0)
+       (if-let [f (:subscribers_count v)]
+         (condp < f 100 high 10 medium 1 low 0)
+         0))))
+
 ;; Spit repositories.json
 (->>
  @repositories
@@ -177,17 +195,19 @@
                  (not-empty (:readme (:files (:metadata v))))
                  (not (:archived v)))))
  (map (fn [[_ v]]
-        (let [d  (:description v)
-              dd (if (not-empty d) (subs d 0 (min (count d) 200)) "")
-              fn (:full_name v)
-              n  (or (last (re-matches #".+/([^/]+)/?" fn)) fn)
-              md (:metadata v)]
-          {:u  (:updated_at v)
+        (let [d       (:description v)
+              dd      (if (not-empty d) (subs d 0 (min (count d) 200)) "")
+              fn      (:full_name v)
+              n       (or (last (re-matches #".+/([^/]+)/?" fn)) fn)
+              files   (:files (:metadata v))
+              awesome (compute-awesome-score v)]
+          {:a  awesome
+           :u  (:updated_at v)
            :d  dd
            :f? (:fork v)
            :t? (:template v)
-           :c? (false? (empty? (:contributing (:files md))))
-           :p? (false? (empty? (:publiccode (:files md))))
+           :c? (false? (empty? (:contributing files)))
+           :p? (false? (empty? (:publiccode files)))
            :l  (:language v)
            :li (:license v)
            :fn fn
