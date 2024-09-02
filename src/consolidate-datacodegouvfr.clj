@@ -60,10 +60,13 @@
     (when (= 200 (:status res))
       (println "Fetching owners data from" url)
       (doseq [e (json/parse-string (:body res) true)]
-        (swap! owners assoc
-               ;; Use lower-case owner URL for keys
-               (str/lower-case (:owner_url e))
-               (dissoc e :owner_url))))))
+        ;; Only get organization owners. FIXME: data.code.gouv.fr
+        ;; should only contain those: remove this check?
+        (when (= (:kind e) "organization")
+          (swap! owners assoc
+                 ;; Use lower-case owner URL for keys
+                 (str/lower-case (:owner_url e))
+                 (dissoc e :owner_url)))))))
 
 ;; Get repos
 (doseq [{:keys [repositories_url repositories_count kind]} @hosts]
