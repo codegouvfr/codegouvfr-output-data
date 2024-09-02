@@ -213,7 +213,7 @@
            :fn fn
            :n  n
            :f  (:forks_count v)
-           :s  (:subscribers_count v)
+           ;; :s  (:subscribers_count v)
            :p  (:platform v)
            :o  (when-let [[_ host owner]
                           (re-matches (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
