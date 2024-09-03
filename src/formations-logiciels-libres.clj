@@ -10,7 +10,7 @@
       (json/generate-string
        (yaml/parse-string
         ;; (slurp "formations-logiciels-libres.yml")
-        (slurp "https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/data/formations-logiciels-libres.yml")
+        (slurp "https://git.sr.ht/~codegouvfr/codegouvfr-data/blob/main/formations-logiciels-libres.yml")
         )
        {:pretty true}))
 
