@@ -7,7 +7,7 @@
 (shell/sh "rm" "-f" dest-file-name)
 
 ;; Set the main yml source file
-(def spec-filename "https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/data/comptes-organismes-publics.yml")
+(def spec-filename "https://git.sr.ht/~codegouvfr/codegouvfr-data/blob/main/comptes-organismes-publics.yml")
 
 ;; Get all forges by domain names
 (def orgs
