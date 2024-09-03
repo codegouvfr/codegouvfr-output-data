@@ -16,13 +16,13 @@ facilement des scripts écrits en Clojure.
 
 # Outils
 
-## export-comptes-organismes-publics.clj
+## `export-comptes-organismes-publics`
 
 Prend le fichier .yml source qui liste les comptes d'organisation hébergeant des codes sources d'organismes publics et l'exporte dans un fichier .yml mis en forme poue https://data.code.gouv.fr.
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/export-comptes-organismes-publics.clj`
 
-## consolidate-datacodegouvfr
+## `consolidate-datacodegouvfr`
 
 Créer des fichiers `json` contenant un extrait consolidé des métadonnées exposées sur https://data.code.gouv.fr..
 
@@ -34,7 +34,7 @@ Fusionner les données des prestataires SILL venant de l'ADULLACT et du CNLL.
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/sill-prestataires.clj`
 
-## `sill-create-latest-xml.clj`
+## `sill-create-latest-xml`
 
 Exporter le flux RSS `latest-sill.xml` à partir de https://code.gouv.fr/sill/api/sill.json.
 
@@ -60,7 +60,7 @@ Prend la version `json` de la documentation et en publie la FAQ en
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/spit-faq-from-json-documentation.clj`
 
-## `list-repos-wo-license.clj`
+## `list-repos-wo-license`
 
 Permet de lister les dépôts pour lesquels manque une licence parmi
 ceux référencés sur https://code.gouv.fr/public/.
