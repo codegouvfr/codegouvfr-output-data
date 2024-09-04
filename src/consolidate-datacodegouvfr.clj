@@ -203,6 +203,14 @@
          10  medium
          1   low
          0)
+       0)
+     ;; Does the repo have many star gazers?
+     (if-let [s (:stargazers_count v)]
+       (condp < s
+         1000 high
+         100  medium
+         10   low
+         0)
        0))))
 
 ;; Spit repositories.json
