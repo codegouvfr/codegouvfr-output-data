@@ -179,22 +179,30 @@
      ;; Does the repo have a license?
      (if (:license files) high 0)
      ;; Does the repo have a publiccode.yml file?
-     (if (:publiccode files) medium 0)
-     ;; Does the repo have a CONTRIBUTING.md file?
-     (if (:contributing files) medium 0)
+     (if (:publiccode files) high 0)
      ;; Is the repo a template?
      (if (:template v) (* medium 2) 0)
+     ;; Does the repo have a CONTRIBUTING.md file?
+     (if (:contributing files) medium 0)
      ;; Does the repo have a description?
      (if (not-empty (:description v)) 0 (- medium))
      ;; Is the repo a fork?
-     (if (:fork v) (- medium) 0)
+     (if (:fork v) (- high) 0)
      ;; Does the repo have many forks?
      (if-let [f (:forks_count v)]
-       (condp < f 1000 high 100 medium 10 low 0)
+       (condp < f
+         1000 high
+         100  medium
+         10   low
+         0)
        0)
      ;; Does the repo have many subscribers?
      (if-let [f (:subscribers_count v)]
-       (condp < f 100 high 10 medium 1 low 0)
+       (condp < f
+         100 high
+         10  medium
+         1   low
+         0)
        0))))
 
 ;; Spit repositories.json
