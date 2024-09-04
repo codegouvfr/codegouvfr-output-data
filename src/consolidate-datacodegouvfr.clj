@@ -213,13 +213,12 @@
                  (not-empty (:readme (:files (:metadata v))))
                  (not (:archived v)))))
  (map (fn [[_ v]]
-        (let [d       (:description v)
-              dd      (if (not-empty d) (subs d 0 (min (count d) 200)) "")
-              fn      (:full_name v)
-              n       (or (last (re-matches #".+/([^/]+)/?" fn)) fn)
-              files   (:files (:metadata v))
-              awesome (compute-awesome-score v)]
-          {:a  awesome
+        (let [d     (:description v)
+              dd    (if (not-empty d) (subs d 0 (min (count d) 200)) "")
+              fn    (:full_name v)
+              n     (or (last (re-matches #".+/([^/]+)/?" fn)) fn)
+              files (:files (:metadata v))]
+          {:a  (compute-awesome-score v)
            :u  (:updated_at v)
            :d  dd
            :f? (:fork v)
