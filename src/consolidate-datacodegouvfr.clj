@@ -4,10 +4,6 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: LICENSE.txt
 
-;; TODO:
-;; - spit tags.json for awesome software
-;; - spit latest-tags.xml for awesome software
-
 (deps/add-deps '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
 (deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.8.60"}}})
 
@@ -26,6 +22,7 @@
 (def owners (atom {}))
 (def repositories (atom {}))
 (def awesome (atom ()))
+(def awesome-releases (atom ()))
 
 (def urls {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
            :annuaire_sup               "https://code.gouv.fr/data/annuaire_sup.json"
@@ -105,12 +102,15 @@
   (log/info "Fetching public sector forges from comptes-organismes-pubics.yml")
   (reset! awesome (or (fetch-yaml (:awesome-codegouvfr urls)) {})))
 
+(defn get-repo-properties [repo_url]
+  (->> @repositories
+       (filter #(= (str/lower-case (:html_url (val %))) repo_url))
+       first
+       second))
+
 (defn prefix-raw-file [awesome-repo]
   (let [{:keys [html_url full_name default_branch platform]}
-        (->> @repositories
-             (filter #(= (str/lower-case (:html_url (val %))) awesome-repo))
-             first
-             second)]
+        (get-repo-properties awesome-repo)]
     (condp = platform
       "github"    (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
       "gitlab"    (format "%s/-/raw/%s/" html_url default_branch)
@@ -121,14 +121,25 @@
   (->> @awesome
        (map
         (fn [[k v]]
-          (if-let [res (fetch-yaml (str (prefix-raw-file (str/lower-case k)) "publiccode.yml"))]
-            [k (conj v res)]
-            [k v])))
-       ;; doall
+          (when-let [pfx (not-empty (prefix-raw-file (str/lower-case k)))]
+            (if-let [res (fetch-yaml (str pfx "publiccode.yml"))]
+              [k (conj v res)]
+              [k v]))))
        (reset! awesome)))
 
 (defn output-awesome-json []
   (spit "awesome.json" (json/generate-string @awesome)))
+
+(defn set-awesome-releases! []
+  (->> @awesome
+       (into {})
+       (map #(take 3 (fetch-json (:releases_url (get-repo-properties (key %))))))
+       flatten
+       (filter seq)
+       (reset! awesome-releases)))
+
+(defn output-releases-json []
+  (spit "releases.json" (json/generate-string @awesome-releases)))
 
 ;; Processing function
 (defn update-owners! []
@@ -204,6 +215,23 @@
          :link        "https://code.gouv.fr/data/latest-repositories.xml"
          :description "code.gouv.fr/sources - Nouveaux comptes d'organisation"})
        (spit "latest-owners.xml")))
+
+(defn output-latest-releases-xml []
+  (->> @awesome-releases
+       (sort-by #(clojure.instant/read-instant-date (:published_at %)))
+       reverse
+       (take 10)
+       (map (fn [{:keys [name repo_name html_url uuid body published_at]}]
+              {:title       (format "Nouvelle version de %s : %s" repo_name name)
+               :link        html_url
+               :guid        uuid
+               :description body
+               :pubDate     (toInst published_at)}))
+       (rss/channel-xml
+        {:title       "code.gouv.fr/sources - Nouvelles versions Awesome"
+         :link        "https://code.gouv.fr/data/latest-releases.xml"
+         :description "code.gouv.fr/sources - Nouvelles versions Awesome"})
+       (spit "latest-releases.xml")))
 
 (defn compute-awesome-score [v]
   (let [files  (:files (:metadata v))
@@ -347,16 +375,19 @@
     (set-owners!)
     (set-repos!)
     (set-public-sector-forges!)
-    (set-awesome!)
     (update-owners!)
+    (set-awesome!)
+    (set-awesome-releases!)
     (update-awesome!)
     (output-owners-json)
     (output-latest-owners-xml)
     (output-repositories-json)
     (output-latest-repositories-xml)
+    (output-latest-releases-xml)
     (output-forges-csv)
     (output-stats-json)
     (output-awesome-json)
+    (output-releases-json)
     (log/info "Hosts:" (count @hosts))
     (log/info "Owners:" (count @owners))
     (log/info "Repositories:" (count @repositories))
