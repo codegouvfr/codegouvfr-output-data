@@ -5,7 +5,6 @@
 ;; License-Filename: LICENSE.txt
 
 ;; TODO:
-;; - spit stats.json
 ;; - spit tags.json for awesome software
 ;; - spit latest-tags.json for awesome software
 
@@ -273,6 +272,39 @@
     (let [n (if (= "GitHub" name) "github.com" name)]
       (spit "forges.csv" (str n "," kind "\n") :append true))))
 
+(defn get-top-owners-by [k]
+  (->> @owners
+       (filter #(when-let [s (get (val %) k)] (> s 1)))
+       (map #(let [v (val %)]
+               (hash-map (str (:name v) " (" (:forge v) ")")
+                         (get v k))))
+       (into {})
+       (sort-by val)
+       reverse
+       (take 10)))
+
+(defn get-top-x [k]
+  (let [m (filter k (vals @repositories))]
+    (->> m
+         (group-by k)
+         (map (fn [[k v]] {k (* 100 (/ (* (count v) 1.0) (count m)))}))
+         (into {})
+         (sort-by val)
+         reverse
+         (take 10))))
+
+(defn output-stats-json []
+  (let [repositories_cnt (filter int? (map #(:repositories_count (val %)) @owners))]
+    (->> {:repos_cnt         (str (count @repositories))
+          :orgas_cnt         (str (count @owners))
+          :avg_repos_cnt     (format "%.2f" (/ (reduce + repositories_cnt) (* 1.0 (count repositories_cnt))))
+          :top_orgs_by_stars (get-top-owners-by :total_stars)
+          :top_orgs_by_repos (get-top-owners-by :repositories_count)
+          :top_licenses      (get-top-x :license)
+          :top_languages     (get-top-x :language)}
+         json/generate-string
+         (spit "stats.json"))))
+
 ;; Main execution
 (defn -main [args]
   (let [{:keys [test-msg] :as opts}
@@ -287,34 +319,10 @@
     (output-repositories-json)
     (output-latest-repositories-xml)
     (output-forges-csv)
+    (output-stats-json)
     (log/info "Hosts:" (count @hosts))
     (log/info "Owners:" (count @owners))
     (log/info "Repositories:" (count @repositories))
     (log/info "Forges:" (count @forges))))
 
-(let [repositories_cnt (filter #(and (int? %) (> % 3)) (map #(:repositories_count (val %)) @owners))
-      ;; repos_cnt        (count @repositories)
-      ]
-  ;; (/ (reduce + repositories_cnt)
-  ;;    (* 1.0 (count repositories_cnt)))
-  (median repositories_cnt)
-  )
-
-
-;; avg_repos_cnt	"5.38"
-;; sill_cnt	511
-;; orgas_cnt	3384
-;; deps_cnt	7674
-;; top_orgs_by_stars	[…]
-;; libs_cnt	897
-;; repos_cnt	21033
-;; top_topics	[…]
-;; median_repos_cnt	1
-;; top_languages	[…]
-;; top_ministries	[]
-;; top_orgs_by_repos	[…]
-;; top_forges	[…]
-;; top_licenses	[…]
-
 (-main *command-line-args*)
-
