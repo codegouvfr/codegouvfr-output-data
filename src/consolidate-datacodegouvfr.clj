@@ -10,8 +10,15 @@
 ;; - spit latest-tags.json for awesome software
 
 (deps/add-deps '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
+(deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.8.60"}}})
 (require '[clj-rss.core :as rss]
-         '[clojure.tools.logging :as log])
+         '[clojure.tools.logging :as log]
+         '[babashka.cli :as cli])
+
+;; Define CLI options
+(def cli-options
+  {:test-msg {:desc    "Testing options"
+              :default "This is a default test message"}})
 
 ;; Initialize atoms
 (def hosts (atom ()))
@@ -266,23 +273,26 @@
       (spit "forges.csv" (str n "," kind "\n") :append true))))
 
 ;; Main execution
-(defn -main []
-  (fetch-hosts)
-  (let [annuaire      (fetch-annuaire)
-        annuaire-tops (fetch-annuaire-tops)]
-    (fetch-owners)
-    (fetch-repos)
-    (fetch-public-sector-forges)
-    (process-owners)
-    (add-pso-top-id annuaire annuaire-tops)
-    (output-owners-json)
-    (output-latest-owners-xml)
-    (output-repositories-json)
-    (output-latest-repositories-xml)
-    (output-forges-csv))
-  (log/info "Hosts:" (count @hosts))
-  (log/info "Owners:" (count @owners))
-  (log/info "Repositories:" (count @repositories))
-  (log/info "Forges:" (count @forges)))
+(defn -main [args]
+  (let [{:keys [test-msg] :as opts}
+        (cli/parse-opts args {:spec cli-options})]
+    (println test-msg)
+    (fetch-hosts)
+    (let [annuaire      (fetch-annuaire)
+          annuaire-tops (fetch-annuaire-tops)]
+      (fetch-owners)
+      (fetch-repos)
+      (fetch-public-sector-forges)
+      (process-owners)
+      (add-pso-top-id annuaire annuaire-tops)
+      (output-owners-json)
+      (output-latest-owners-xml)
+      (output-repositories-json)
+      (output-latest-repositories-xml)
+      (output-forges-csv))
+    (log/info "Hosts:" (count @hosts))
+    (log/info "Owners:" (count @owners))
+    (log/info "Repositories:" (count @repositories))
+    (log/info "Forges:" (count @forges))))
 
-(-main)
+(-main *command-line-args*)
