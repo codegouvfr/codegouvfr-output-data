@@ -5,7 +5,6 @@
 ;; License-Filename: LICENSE.txt
 
 ;; TODO:
-;; - fix PSO setting
 ;; - spit stats.json
 ;; - spit tags.json for awesome software
 ;; - spit latest-tags.json for awesome software
@@ -32,7 +31,11 @@
            :annuaire_tops              "https://code.gouv.fr/data/annuaire_tops.json"
            :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"})
 
-;; Helper functions
+;; Helper function
+(defn toInst [^String s]
+  (.toInstant (clojure.instant/read-instant-date s)))
+
+;; Fetching functions
 (defn fetch-json [url]
   (let [res (curl/get url)]
     (if (= (:status res) 200)
@@ -45,21 +48,13 @@
       (yaml/parse-string (:body res) :keywords false)
       (log/error "Failed to fetch YAML from" url "Status:" (:status res)))))
 
-(defn toInst [^String s]
-  (.toInstant (clojure.instant/read-instant-date s)))
-
-;; Fetching functions
-(defn fetch-hosts []
-  (log/info "Fetching hosts from" (:hosts urls))
-  (reset! hosts (or (fetch-json (:hosts urls)) ())))
-
 (defn fetch-annuaire []
   (log/info "Fetching annuaire at" (:annuaire_sup urls))
-  (when-let [data (fetch-json (:annuaire_sup urls))]
-    (->> data
-         (map (fn [{:keys [id service_top nom]}]
-                [id {:top service_top :nom nom}]))
-         (into {}))))
+  (->> (:annuaire_sup urls)
+       fetch-json
+       (map (fn [{:keys [id service_top nom]}]
+              [id {:top service_top :nom nom}]))
+       (into {})))
 
 (defn fetch-annuaire-tops []
   (log/info "Fetching annuaire tops at" (:annuaire_tops urls))
@@ -67,7 +62,12 @@
        fetch-json
        (into {})))
 
-(defn fetch-owners []
+;; Set hosts, owners, repositories and public forges
+(defn set-hosts! []
+  (log/info "Fetching hosts from" (:hosts urls))
+  (reset! hosts (or (fetch-json (:hosts urls)) ())))
+
+(defn set-owners! []
   (doseq [{:keys [owners_url]} @hosts]
     (let [url (str owners_url "?per_page=1000")]
       (when-let [data (fetch-json url)]
@@ -77,7 +77,7 @@
                  (str/lower-case (:owner_url e))
                  (dissoc e :owner_url)))))))
 
-(defn fetch-repos []
+(defn set-repos! []
   (doseq [{:keys [repositories_url repositories_count kind]} @hosts]
     (dotimes [n (int (clojure.math/floor (+ 1 (/ (- repositories_count 1) 1000))))]
       (let [url (str repositories_url (format "?page=%s&per_page=1000" (+ n 1)))]
@@ -92,18 +92,19 @@
                        (assoc :platform kind)
                        (dissoc :repository_url)))))))))
 
-(defn fetch-public-sector-forges []
+(defn set-public-sector-forges! []
   (log/info "Fetching public sector forges from comptes-organismes-pubics.yml")
   (reset! forges (or (fetch-yaml (:comptes-organismes-publics urls)) {})))
 
-;; Processing functions
-(defn process-owners []
+;; Processing function
+(defn update-owners! []
   (doseq [[f forge-data] @forges]
     (let [f (if (= f "github.com") "github" f)]
       (if-let [groups (get forge-data "groups")]
         (doseq [[group group-data] groups]
-          (let [owner_url                         (str/lower-case
-                           (format (str (:hosts urls "/%s/owners/%s")) f group))
+          (let [owner_url
+                (str/lower-case
+                 (format (str (:hosts urls) "/%s/owners/%s") f group))
                 {:strs [pso pso_id floss_policy]} group-data]
             (swap! owners update-in [owner_url]
                    #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy
@@ -112,17 +113,18 @@
           (let [{:strs [pso pso_id floss_policy forge]} forge-data]
             (swap! owners update-in [k]
                    #(assoc % :pso pso :pso_id pso_id :floss_policy floss_policy
-                           :forge forge))))))))
-
-(defn add-pso-top-id [annuaire annuaire-tops]
-  (doseq [[k v] (filter #(:pso_id (val %)) @owners)]
-    (let [pso_id      (:pso_id v)
-          top_id      (or (some (into #{} (keys annuaire-tops)) #{pso_id})
-                     (:top (get annuaire pso_id))
-                     pso_id)
-          top_id_name (:nom (get annuaire top_id))]
-      (swap! owners update-in [k]
-             conj {:pso_top_id top_id :pso_top_id_name top_id_name}))))
+                           :forge forge)))))))
+  ;; Add top_id and top_id_name to owners
+  (let [annuaire      (fetch-annuaire)
+        annuaire-tops (fetch-annuaire-tops)]
+    (doseq [[k v] (filter #(:pso_id (val %)) @owners)]
+      (let [pso_id      (:pso_id v)
+            top_id      (or (some (into #{} (keys annuaire-tops)) #{pso_id})
+                            (:top (get annuaire pso_id))
+                            pso_id)
+            top_id_name (:nom (get annuaire top_id))]
+        (swap! owners update-in [k]
+               conj {:pso_top_id top_id :pso_top_id_name top_id_name})))))
 
 ;; Output functions
 (defn output-owners-json []
@@ -275,24 +277,44 @@
 (defn -main [args]
   (let [{:keys [test-msg] :as opts}
         (cli/parse-opts args {:spec cli-options})]
-    (println test-msg)
-    (fetch-hosts)
-    (let [annuaire      (fetch-annuaire)
-          annuaire-tops (fetch-annuaire-tops)]
-      (fetch-owners)
-      (fetch-repos)
-      (fetch-public-sector-forges)
-      (process-owners)
-      (add-pso-top-id annuaire annuaire-tops)
-      (output-owners-json)
-      (output-latest-owners-xml)
-      (output-repositories-json)
-      (output-latest-repositories-xml)
-      (output-forges-csv))
+    (set-hosts!)
+    (set-owners!)
+    (set-repos!)
+    (set-public-sector-forges!)
+    (update-owners!)
+    (output-owners-json)
+    (output-latest-owners-xml)
+    (output-repositories-json)
+    (output-latest-repositories-xml)
+    (output-forges-csv)
     (log/info "Hosts:" (count @hosts))
     (log/info "Owners:" (count @owners))
     (log/info "Repositories:" (count @repositories))
     (log/info "Forges:" (count @forges))))
 
-;; (-main *command-line-args*)
+(let [repositories_cnt (filter #(and (int? %) (> % 3)) (map #(:repositories_count (val %)) @owners))
+      ;; repos_cnt        (count @repositories)
+      ]
+  ;; (/ (reduce + repositories_cnt)
+  ;;    (* 1.0 (count repositories_cnt)))
+  (median repositories_cnt)
+  )
+
+
+;; avg_repos_cnt	"5.38"
+;; sill_cnt	511
+;; orgas_cnt	3384
+;; deps_cnt	7674
+;; top_orgs_by_stars	[…]
+;; libs_cnt	897
+;; repos_cnt	21033
+;; top_topics	[…]
+;; median_repos_cnt	1
+;; top_languages	[…]
+;; top_ministries	[]
+;; top_orgs_by_repos	[…]
+;; top_forges	[…]
+;; top_licenses	[…]
+
+(-main *command-line-args*)
 
