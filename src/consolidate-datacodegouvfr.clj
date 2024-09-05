@@ -6,29 +6,32 @@
 
 ;; TODO:
 ;; - spit tags.json for awesome software
-;; - spit latest-tags.json for awesome software
+;; - spit latest-tags.xml for awesome software
 
 (deps/add-deps '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
 (deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.8.60"}}})
+
 (require '[clj-rss.core :as rss]
          '[clojure.tools.logging :as log]
          '[babashka.cli :as cli])
 
 ;; Define CLI options
 (def cli-options
-  {:test-msg {:desc    "Testing options"
-              :default "This is a default test message"}})
+  {:test {:desc    "Testing?"
+          :default nil}})
 
 ;; Initialize atoms
 (def hosts (atom ()))
 (def forges (atom ()))
 (def owners (atom {}))
 (def repositories (atom {}))
+(def awesome (atom ()))
 
 (def urls {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
            :annuaire_sup               "https://code.gouv.fr/data/annuaire_sup.json"
            :annuaire_tops              "https://code.gouv.fr/data/annuaire_tops.json"
-           :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"})
+           :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"
+           :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"})
 
 ;; Helper function
 (defn toInst [^String s]
@@ -36,16 +39,18 @@
 
 ;; Fetching functions
 (defn fetch-json [url]
-  (let [res (curl/get url)]
-    (if (= (:status res) 200)
-      (json/parse-string (:body res) true)
-      (log/error "Failed to fetch JSON from" url "Status:" (:status res)))))
+  (let [res (try (curl/get url)
+                 (catch Exception _
+                   (log/error "Failed to fetch JSON from" url)))]
+    (when (= (:status res) 200)
+      (json/parse-string (:body res) true))))
 
 (defn fetch-yaml [url]
-  (let [res (curl/get url)]
-    (if (= (:status res) 200)
-      (yaml/parse-string (:body res) :keywords false)
-      (log/error "Failed to fetch YAML from" url "Status:" (:status res)))))
+  (let [res (try (curl/get url)
+                 (catch Exception _
+                   (log/error "Failed to fetch YAML from" url)))]
+    (when (= (:status res) 200)
+      (yaml/parse-string (:body res) :keywords false))))
 
 (defn fetch-annuaire []
   (log/info "Fetching annuaire at" (:annuaire_sup urls))
@@ -62,9 +67,10 @@
        (into {})))
 
 ;; Set hosts, owners, repositories and public forges
-(defn set-hosts! []
+(defn set-hosts! [test]
   (log/info "Fetching hosts from" (:hosts urls))
-  (reset! hosts (or (fetch-json (:hosts urls)) ())))
+  (let [res (or (fetch-json (:hosts urls)) ())]
+    (reset! hosts (if test (take 1 res) res))))
 
 (defn set-owners! []
   (doseq [{:keys [owners_url]} @hosts]
@@ -82,7 +88,7 @@
       (let [url (str repositories_url (format "?page=%s&per_page=1000" (+ n 1)))]
         (when-let [data (try (fetch-json url)
                              (catch Exception e
-                               (log/error "Error fetching repos froma" (.getMessage e))))]
+                               (log/error "Error fetching repos from" (.getMessage e))))]
           (log/info "Fetching repos data from" url)
           (doseq [e data]
             (swap! repositories assoc
@@ -92,8 +98,37 @@
                        (dissoc :repository_url)))))))))
 
 (defn set-public-sector-forges! []
-  (log/info "Fetching public sector forges from comptes-organismes-pubics.yml")
+  (log/info "Fetching public sector forges from comptes-organismes-publics.yml")
   (reset! forges (or (fetch-yaml (:comptes-organismes-publics urls)) {})))
+
+(defn set-awesome! []
+  (log/info "Fetching public sector forges from comptes-organismes-pubics.yml")
+  (reset! awesome (or (fetch-yaml (:awesome-codegouvfr urls)) {})))
+
+(defn prefix-raw-file [awesome-repo]
+  (let [{:keys [html_url full_name default_branch platform]}
+        (->> @repositories
+             (filter #(= (str/lower-case (:html_url (val %))) awesome-repo))
+             first
+             second)]
+    (condp = platform
+      "github"    (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
+      "gitlab"    (format "%s/-/raw/%s/" html_url default_branch)
+      "sourcehut" (format "%s/blob/%s/" html_url default_branch)
+      nil)))
+
+(defn update-awesome! []
+  (->> @awesome
+       (map
+        (fn [[k v]]
+          (if-let [res (fetch-yaml (str (prefix-raw-file (str/lower-case k)) "publiccode.yml"))]
+            [k (conj v res)]
+            [k v])))
+       ;; doall
+       (reset! awesome)))
+
+(defn output-awesome-json []
+  (spit "awesome.json" (json/generate-string @awesome)))
 
 ;; Processing function
 (defn update-owners! []
@@ -307,19 +342,21 @@
 
 ;; Main execution
 (defn -main [args]
-  (let [{:keys [test-msg] :as opts}
-        (cli/parse-opts args {:spec cli-options})]
-    (set-hosts!)
+  (let [{:keys [test]} (cli/parse-opts args {:spec cli-options})]
+    (set-hosts! test)
     (set-owners!)
     (set-repos!)
     (set-public-sector-forges!)
+    (set-awesome!)
     (update-owners!)
+    (update-awesome!)
     (output-owners-json)
     (output-latest-owners-xml)
     (output-repositories-json)
     (output-latest-repositories-xml)
     (output-forges-csv)
     (output-stats-json)
+    (output-awesome-json)
     (log/info "Hosts:" (count @hosts))
     (log/info "Owners:" (count @owners))
     (log/info "Repositories:" (count @repositories))
