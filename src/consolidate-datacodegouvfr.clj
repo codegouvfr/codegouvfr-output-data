@@ -5,6 +5,7 @@
 ;; License-Filename: LICENSE.txt
 
 ;; TODO:
+;; - fix PSO setting
 ;; - spit stats.json
 ;; - spit tags.json for awesome software
 ;; - spit latest-tags.json for awesome software
@@ -54,11 +55,11 @@
 
 (defn fetch-annuaire []
   (log/info "Fetching annuaire at" (:annuaire_sup urls))
-  (let [data (fetch-json (:annuaire_sup urls))]
-    (when data
-      (into {} (map (fn [{:keys [id service_top nom]}]
-                      [id {:top service_top :nom nom}])
-                    data)))))
+  (when-let [data (fetch-json (:annuaire_sup urls))]
+    (->> data
+         (map (fn [{:keys [id service_top nom]}]
+                [id {:top service_top :nom nom}]))
+         (into {}))))
 
 (defn fetch-annuaire-tops []
   (log/info "Fetching annuaire tops at" (:annuaire_tops urls))
@@ -68,9 +69,8 @@
 
 (defn fetch-owners []
   (doseq [{:keys [owners_url]} @hosts]
-    (let [url  (str owners_url "?per_page=1000")
-          data (fetch-json url)]
-      (when data
+    (let [url (str owners_url "?per_page=1000")]
+      (when-let [data (fetch-json url)]
         (log/info "Fetching owners data from" url)
         (doseq [e (filter #(= (:kind %) "organization") data)]
           (swap! owners assoc
@@ -80,11 +80,10 @@
 (defn fetch-repos []
   (doseq [{:keys [repositories_url repositories_count kind]} @hosts]
     (dotimes [n (int (clojure.math/floor (+ 1 (/ (- repositories_count 1) 1000))))]
-      (let [url  (str repositories_url (format "?page=%s&per_page=1000" (+ n 1)))
-            data (try (fetch-json url)
-                      (catch Exception e
-                        (log/error "Error fetching repos froma" (.getMessage e))))]
-        (when data
+      (let [url (str repositories_url (format "?page=%s&per_page=1000" (+ n 1)))]
+        (when-let [data (try (fetch-json url)
+                             (catch Exception e
+                               (log/error "Error fetching repos froma" (.getMessage e))))]
           (log/info "Fetching repos data from" url)
           (doseq [e data]
             (swap! repositories assoc
@@ -295,4 +294,5 @@
     (log/info "Repositories:" (count @repositories))
     (log/info "Forges:" (count @forges))))
 
-(-main *command-line-args*)
+;; (-main *command-line-args*)
+
