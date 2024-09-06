@@ -16,34 +16,27 @@ facilement des scripts écrits en Clojure.
 
 # Outils
 
-## `export-comptes-organismes-publics`
-
-Prend le fichier .yml source qui liste les comptes d'organisation hébergeant des codes sources d'organismes publics et l'exporte dans un fichier .yml mis en forme poue https://data.code.gouv.fr.
-
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/export-comptes-organismes-publics.clj`
-
 ## `consolidate-datacodegouvfr`
 
-Créer des fichiers `json` contenant un extrait consolidé des métadonnées exposées sur https://data.code.gouv.fr..
+Crée les fichiers contenant les données exposées sur <https://code.gouv.fr/sources>.
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/consolidate-datacodegouvfr.clj`
 
+## `export-comptes-organismes-publics`
+
+Prend le fichier `.yml` source listant les comptes d'organisation hébergeant des codes sources d'organismes publics et l'exporte dans un fichier .yml mis en forme poue https://data.code.gouv.fr.
+
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/export-comptes-organismes-publics.clj`
+
 ## `sill-prestataires`
 
-Fusionner les données des prestataires SILL venant de l'ADULLACT et du CNLL.
+Fusionne les données des prestataires de l'ADULLACT et du CNLL pour les exposer dans le [SILL](https://code.gouv.fr/sill/).
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/sill-prestataires.clj`
 
-## `sill-create-latest-xml`
-
-Exporter le flux RSS `latest-sill.xml` à partir de https://code.gouv.fr/sill/api/sill.json.
-
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/sill-create-latest-xml.clj`
-
 ## `annuaire-service-public-enrichi`
 
-Enrichi le `.json` de l'annuaire des services publics en ajoutant les
-ancêtres directs et lointains.
+Enrichi le `.json` de [l'annuaire des services publics](https://lannuaire.service-public.fr/) en ajoutant les ancêtres directs et lointains.
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/annuaire-service-public-enrichi.clj`
 
@@ -53,17 +46,9 @@ Produit un fichier `.json` avec les formations logiciels libres.
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/formations-logiciels-libres.clj`
 
-## `spit-faq-from-json-documentation`
-
-Prend la version `json` de la documentation et en publie la FAQ en
-`json`.
-
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/spit-faq-from-json-documentation.clj`
-
 ## `list-repos-wo-license`
 
-Permet de lister les dépôts pour lesquels manque une licence parmi
-ceux référencés sur https://code.gouv.fr/public/.
+Liste les dépôts pour lesquels manque une licence parmi ceux référencés sur https://code.gouv.fr/sources/.
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/list-repos-wo-license.clj`
 
