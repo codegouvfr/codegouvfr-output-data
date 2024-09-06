@@ -27,6 +27,7 @@
 (def awesome-releases (atom ()))
 
 (def urls {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
+           :sill                       "https://code.gouv.fr/sill/api/sill.json"
            :annuaire_sup               "https://code.gouv.fr/data/annuaire_sup.json"
            :annuaire_tops              "https://code.gouv.fr/data/annuaire_tops.json"
            :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"
@@ -209,6 +210,23 @@
                  :pso (:pso v)})))
        json/generate-string
        (spit "owners.json")))
+
+(defn output-latest-sill-xml []
+  (->> (fetch-json (:sill urls))
+       (sort-by #(java.util.Date. (:referencedSinceTime %)))
+       reverse
+       (take 10)
+       (map #(let [link (str "https://code.gouv.fr/sill/detail?name=" (:name %))]
+               {:title       (str "Nouveau logiciel au SILL : " (:name %))
+                :link        link
+                :guid        link
+                :description (:function %)
+                :pubDate     (.toInstant (java.util.Date. (:referencedSinceTime %)))}))
+       (rss/channel-xml
+        {:title       "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"
+         :link        "https://code.gouv.fr/data/latest-sill.xml"
+         :description "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"})
+       (spit "latest-sill.xml")))
 
 (defn output-latest-owners-xml []
   (->> @owners
@@ -393,7 +411,8 @@
       (set-awesome-releases!)
       (update-awesome!))
     (output-owners-json)
-    (when-not only-owners
+    (when-not only-owners 
+      (output-latest-sill-xml)
       (output-latest-owners-xml)
       (output-repositories-json)
       (output-latest-repositories-xml)
