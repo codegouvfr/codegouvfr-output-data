@@ -13,8 +13,10 @@
 
 ;; Define CLI options
 (def cli-options
-  {:test {:desc    "Testing?"
-          :default nil}})
+  {:test   {:desc    "Testing?"
+            :default nil}
+   :owners {:desc    "Only handle owners"
+            :default nil}})
 
 ;; Initialize atoms
 (def hosts (atom ()))
@@ -64,10 +66,13 @@
        (into {})))
 
 ;; Set hosts, owners, repositories and public forges
-(defn set-hosts! [test]
+(defn set-hosts! [opts]
   (log/info "Fetching hosts from" (:hosts urls))
   (let [res (or (fetch-json (:hosts urls)) ())]
-    (reset! hosts (if test (take 1 res) res))))
+    (reset! hosts
+            (if (or (:test opts) (:owners opts))
+              (take 1 res)
+              res))))
 
 (defn set-owners! []
   (doseq [{:keys [owners_url]} @hosts]
@@ -171,9 +176,9 @@
         annuaire-tops (fetch-annuaire-tops)]
     (doseq [[k v] (filter #(:pso_id (val %)) @owners)]
       (let [pso_id      (:pso_id v)
-            top_id      (or (some (into #{} (keys annuaire-tops)) #{pso_id})
-                            (:top (get annuaire pso_id))
-                            pso_id)
+            top_id      (if (some #{pso_id} (into #{} (map name (keys annuaire-tops))))
+                          pso_id
+                          (:top (get annuaire pso_id)))
             top_id_name (:nom (get annuaire top_id))]
         (swap! owners update-in [k]
                conj {:pso_top_id top_id :pso_top_id_name top_id_name})))))
@@ -377,27 +382,29 @@
 
 ;; Main execution
 (defn -main [args]
-  (let [{:keys [test]} (cli/parse-opts args {:spec cli-options})]
-    (set-hosts! test)
+  (let [{:keys [test owners] :as opts} (cli/parse-opts args {:spec cli-options})]
+    (set-hosts! opts)
     (set-owners!)
-    (set-repos!)
+    (when-not owners (set-repos!))
     (set-public-sector-forges!)
     (update-owners!)
-    (set-awesome!)
-    (set-awesome-releases!)
-    (update-awesome!)
+    (when-not owners
+      (set-awesome!)
+      (set-awesome-releases!)
+      (update-awesome!))
     (output-owners-json)
-    (output-latest-owners-xml)
-    (output-repositories-json)
-    (output-latest-repositories-xml)
-    (output-latest-releases-xml)
-    (output-forges-csv)
-    (output-stats-json)
-    (output-awesome-json)
-    (output-releases-json)
-    (log/info "Hosts:" (count @hosts))
-    (log/info "Owners:" (count @owners))
-    (log/info "Repositories:" (count @repositories))
-    (log/info "Forges:" (count @forges))))
+    (when-not owners
+      (output-latest-owners-xml)
+      (output-repositories-json)
+      (output-latest-repositories-xml)
+      (output-latest-releases-xml)
+      (output-forges-csv)
+      (output-stats-json)
+      (output-awesome-json)
+      (output-releases-json)
+      (log/info "Hosts:" (count @hosts))
+      (log/info "Owners:" (count @owners))
+      (log/info "Repositories:" (count @repositories))
+      (log/info "Forges:" (count @forges)))))
 
 (-main *command-line-args*)
