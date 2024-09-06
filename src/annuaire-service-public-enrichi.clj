@@ -33,6 +33,8 @@
 
 (def tops
   #{
+    ;; Premier ministre
+    "a515667c-6dc0-4544-a1a8-2cf13d7da23b"
     ;; "Ministère de l'Éducation nationale et de la Jeunesse"
     "3ed2f725-e077-4973-a531-498e13fc7861"
     ;; "Ministère des Solidarités, de l'Autonomie et des Personnes handicapées"
