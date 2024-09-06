@@ -133,7 +133,14 @@
 (defn set-awesome-releases! []
   (->> @awesome
        (into {})
-       (map #(take 3 (fetch-json (:releases_url (get-repo-properties (key %))))))
+       (map #(take 3
+                   (let [r        (key %)
+                         m        (re-matches #".+/([^/]+)/([^/]+)/?" r)
+                         r_name   (last m)
+                         r_o_name (second m)]
+                     (map
+                      (fn [r] (assoc r :repo_name (str r_name " (" r_o_name ")")))
+                      (fetch-json (:releases_url (get-repo-properties r)))))))
        flatten
        (filter seq)
        (reset! awesome-releases)))
