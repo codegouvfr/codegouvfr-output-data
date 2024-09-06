@@ -6,24 +6,23 @@
 
 ;; Get the json annuaire file
 (println "Fetching annuaire as a zip file from data.gouv.fr...")
-(def annuaire-zip-url
-  "https://www.data.gouv.fr/fr/datasets/r/d0158eb2-6772-49c2-afb1-732e573ba1e5")
-(let [stream (-> (curl/get annuaire-zip-url {:as :bytes})
-                 :body
-                 (io/input-stream)
-                 (java.util.zip.ZipInputStream.))]
+
+(let [annuaire-zip-url "https://www.data.gouv.fr/fr/datasets/r/d0158eb2-6772-49c2-afb1-732e573ba1e5"
+      stream           (-> (curl/get annuaire-zip-url {:as :bytes})
+                           :body
+                           (io/input-stream)
+                           (java.util.zip.ZipInputStream.))]
   (.getNextEntry stream)
   (println "Creating annuaire.json")
   (io/copy stream (io/file "annuaire.json")))
 
-;; Create a variable containing the original data
-(def annuaire
-  (->> (json/parse-string (slurp "annuaire.json") true)
-       :service
-       (map (fn [a] [(:id a) (select-keys a [:hierarchie :nom :sigle])]))
-       flatten
-       (apply hash-map)
-       atom))
+;; Create a variable containing the original annuaire data
+(def annuaire (atom {}))
+(->> (json/parse-string (slurp "annuaire.json") true)
+     :service
+     (map (fn [a] [(:id a) (select-keys a [:hierarchie :nom :sigle])]))
+     (into {})
+     (reset! annuaire))
 
 ;; Add service_sup
 (println "Adding service_sup...")
@@ -86,6 +85,7 @@
 
 ;; Add service_top
 (println "Adding service_top...")
+
 (doseq [a (filter #(seq (:service_sup (val %))) @annuaire)]
   (swap! annuaire update-in
          [(key a)]
@@ -93,6 +93,7 @@
 
 ;; Output annuaire_sup.json
 (println "Creating annuaire_sup.json...")
+
 (spit "annuaire_sup.json"
       (json/generate-string
        (map (fn [[k v]] (conj v {:id k})) @annuaire)
@@ -102,4 +103,3 @@
 (spit "annuaire_tops.json"
       (-> (map #(hash-map % (:nom (get @annuaire %))) tops)
           (json/generate-string {:pretty true})))
-
