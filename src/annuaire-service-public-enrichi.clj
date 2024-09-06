@@ -4,31 +4,11 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: LICENSE.txt
 
-;; Get the json annuaire file
-(println "Fetching annuaire as a zip file from data.gouv.fr...")
+(require '[clojure.tools.logging :as log])
 
-(let [annuaire-zip-url "https://www.data.gouv.fr/fr/datasets/r/d0158eb2-6772-49c2-afb1-732e573ba1e5"
-      stream           (-> (curl/get annuaire-zip-url {:as :bytes})
-                           :body
-                           (io/input-stream)
-                           (java.util.zip.ZipInputStream.))]
-  (.getNextEntry stream)
-  (println "Creating annuaire.json")
-  (io/copy stream (io/file "annuaire.json")))
+;; Set variables
 
-;; Create a variable containing the original annuaire data
 (def annuaire (atom {}))
-(->> (json/parse-string (slurp "annuaire.json") true)
-     :service
-     (map (fn [a] [(:id a) (select-keys a [:hierarchie :nom :sigle])]))
-     (into {})
-     (reset! annuaire))
-
-;; Add service_sup
-(println "Adding service_sup...")
-(doseq [a (filter #(< 0 (count (:hierarchie (val %)))) @annuaire)]
-  (doseq [b (filter #(= (:type_hierarchie %) "Service Fils") (:hierarchie (val a)))]
-    (swap! annuaire update-in [(:service b)] conj {:service_sup (key a)})))
 
 (def tops
   #{
@@ -72,6 +52,31 @@
     "b128cdf9-1bf5-4294-9470-2041e8ecd1f6"
     })
 
+
+(defn fetch-annuaire-zip []
+  (log/info "Fetching annuaire as a zip file from data.gouv.fr...")
+  (let [annuaire-zip-url "https://www.data.gouv.fr/fr/datasets/r/d0158eb2-6772-49c2-afb1-732e573ba1e5"
+        stream           (-> (curl/get annuaire-zip-url {:as :bytes})
+                             :body
+                             (io/input-stream)
+                             (java.util.zip.ZipInputStream.))]
+    (.getNextEntry stream)
+    (log/info "Output annuaire.json")
+    (io/copy stream (io/file "annuaire.json"))))
+
+(defn set-annuaire! []
+  (->> (json/parse-string (slurp "annuaire.json") true)
+       :service
+       (map (fn [a] [(:id a) (select-keys a [:hierarchie :nom :sigle])]))
+       (into {})
+       (reset! annuaire)))
+
+(defn add-service-sup! []
+  (log/info "Adding service_sup...")
+  (doseq [a (filter #(< 0 (count (:hierarchie (val %)))) @annuaire)]
+    (doseq [b (filter #(= (:type_hierarchie %) "Service Fils") (:hierarchie (val a)))]
+      (swap! annuaire update-in [(:service b)] conj {:service_sup (key a)}))))
+
 (defn get-ancestor [service_sup_id]
   (let [seen (atom #{})]
     (loop [s_id service_sup_id]
@@ -83,23 +88,34 @@
           (do (swap! seen conj s_id)
               (recur sup)))))))
 
-;; Add service_top
-(println "Adding service_top...")
+(defn add-service-top! []
+  (doseq [a (filter #(seq (:service_sup (val %))) @annuaire)]
+    (swap! annuaire update-in
+           [(key a)]
+           conj {:service_top (get-ancestor (:service_sup (val a)))})))
 
-(doseq [a (filter #(seq (:service_sup (val %))) @annuaire)]
-  (swap! annuaire update-in
-         [(key a)]
-         conj {:service_top (get-ancestor (:service_sup (val a)))}))
+(defn output-annuaire-sup []
+  (log/info "Output annuaire_sup.json...")
+  (spit "annuaire_sup.json"
+        (json/generate-string
+         (map (fn [[k v]] (conj v {:id k})) @annuaire)
+         {:pretty true})))
 
-;; Output annuaire_sup.json
-(println "Creating annuaire_sup.json...")
+(defn output-annuaire-tops []
+  (log/info "Output annuaire_tops.json...")
+  (spit "annuaire_tops.json"
+        (-> (map #(hash-map % (:nom (get @annuaire %))) tops)
+            (json/generate-string {:pretty true}))))
 
-(spit "annuaire_sup.json"
-      (json/generate-string
-       (map (fn [[k v]] (conj v {:id k})) @annuaire)
-       {:pretty true}))
+(some #{"c"} #{"a" "b"})
 
-;; Output annuaire_tops.json
-(spit "annuaire_tops.json"
-      (-> (map #(hash-map % (:nom (get @annuaire %))) tops)
-          (json/generate-string {:pretty true})))
+(defn -main []
+  (fetch-annuaire-zip)
+  (set-annuaire!)
+  (add-service-sup!)
+  (add-service-top!)
+  (output-annuaire-sup)
+  (output-annuaire-tops))
+
+(-main)
+
