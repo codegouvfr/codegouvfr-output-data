@@ -1,4 +1,4 @@
-{:version     "0.3"
+{:version     "0.4"
  :description "Utilitaires pour code.gouv.fr"
  :url         "https://git.sr.ht/~codegouvfr/codegouvfr-outils"
  :license     {:name "Eclipse Public License - v 2.0"
