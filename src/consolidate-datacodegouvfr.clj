@@ -13,10 +13,10 @@
 
 ;; Define CLI options
 (def cli-options
-  {:test   {:desc    "Testing?"
-            :default nil}
-   :owners {:desc    "Only handle owners"
-            :default nil}})
+  {:test        {:desc    "Testing?"
+                 :default nil}
+   :only-owners {:desc    "Only handle owners"
+                 :default nil}})
 
 ;; Initialize atoms
 (def hosts (atom ()))
@@ -382,18 +382,18 @@
 
 ;; Main execution
 (defn -main [args]
-  (let [{:keys [test owners] :as opts} (cli/parse-opts args {:spec cli-options})]
+  (let [{:keys [test only-owners] :as opts} (cli/parse-opts args {:spec cli-options})]
     (set-hosts! opts)
     (set-owners!)
-    (when-not owners (set-repos!))
+    (when-not only-owners (set-repos!))
     (set-public-sector-forges!)
     (update-owners!)
-    (when-not owners
+    (when-not only-owners
       (set-awesome!)
       (set-awesome-releases!)
       (update-awesome!))
     (output-owners-json)
-    (when-not owners
+    (when-not only-owners
       (output-latest-owners-xml)
       (output-repositories-json)
       (output-latest-repositories-xml)
