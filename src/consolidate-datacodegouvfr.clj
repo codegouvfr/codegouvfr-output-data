@@ -103,7 +103,8 @@
 
 (defn set-public-sector-forges! []
   (log/info "Fetching public sector forges from comptes-organismes-publics.yml")
-  (reset! forges (or (fetch-yaml (:comptes-organismes-publics urls)) {})))
+  (when-let [res (fetch-yaml (:comptes-organismes-publics urls))]
+    (reset! forges res)))
 
 (defn set-awesome! []
   (log/info "Fetching public sector forges from comptes-organismes-pubics.yml")
@@ -117,14 +118,15 @@
        first
        second))
 
-(defn prefix-raw-file [awesome-repo]
-  (let [{:keys [html_url full_name default_branch platform]}
-        (get-repo-properties awesome-repo)]
-    (condp = platform
-      "github.com" (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
-      "gitlab.com" (format "%s/-/raw/%s/" html_url default_branch)
-      "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
-      (format "%s/-/raw/%s/" html_url default_branch))))
+(defn prefix-raw-file [^String awesome-repo]
+  (when (not-empty awesome-repo)
+    (let [{:keys [html_url full_name default_branch platform]}
+          (get-repo-properties awesome-repo)]
+      (condp = platform
+        "github.com" (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
+        "gitlab.com" (format "%s/-/raw/%s/" html_url default_branch)
+        "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
+        (format "%s/-/raw/%s/" html_url default_branch)))))
 
 (defn update-awesome! []
   (->> @awesome
@@ -153,7 +155,8 @@
                          r_o_name (second m)]
                      (map
                       (fn [r] (assoc r :repo_name (str r_name " (" r_o_name ")")))
-                      (fetch-json (:releases_url (get-repo-properties r)))))))
+                      (when-let [rel_url (:releases_url (get-repo-properties r))]
+                        (fetch-json rel_url))))))
        flatten
        (filter seq)
        (reset! awesome-releases)))
@@ -440,4 +443,3 @@
       (log/info "Forges:" (count @forges)))))
 
 (-main *command-line-args*)
-
