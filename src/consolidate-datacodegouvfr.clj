@@ -137,7 +137,11 @@
        (reset! awesome)))
 
 (defn output-awesome-json []
-  (spit "awesome.json" (json/generate-string @awesome)))
+  (->> @awesome
+       (map (fn [[k v]] (assoc v :url k)))
+       flatten
+       json/generate-string
+       (spit "awesome.json")))
 
 (defn set-awesome-releases! []
   (->> @awesome
