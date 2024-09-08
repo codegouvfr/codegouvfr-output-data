@@ -67,7 +67,7 @@
        (into {})))
 
 ;; Set hosts, owners, repositories and public forges
-(defn set-hosts! [opts]
+(defn set-hosts! [& [opts]]
   (log/info "Fetching hosts from" (:hosts urls))
   (let [res (or (fetch-json (:hosts urls)) ())]
     (reset! hosts
@@ -88,16 +88,17 @@
 (defn set-repos! []
   (doseq [{:keys [repositories_url repositories_count url]} @hosts]
     (dotimes [n (int (clojure.math/floor (+ 1 (/ (- repositories_count 1) 1000))))]
-      (let [url (str repositories_url (format "?page=%s&per_page=1000" (+ n 1)))]
-        (when-let [data (try (fetch-json url)
+      (let [repos-url (str repositories_url (format "?page=%s&per_page=1000" (+ n 1)))
+            platform  (last (re-matches #"^https://([^/]+)/?$" (or url "")))]
+        (when-let [data (try (fetch-json repos-url)
                              (catch Exception e
                                (log/error "Error fetching repos from" (.getMessage e))))]
-          (log/info "Fetching repos data from" url)
+          (log/info "Fetching repos data from" repos-url)
           (doseq [e data]
             (swap! repositories assoc
                    (str/lower-case (:repository_url e))
                    (-> e
-                       (assoc :platform (last (re-matches #"^https://([^/]+)/?$" url)))
+                       (assoc :platform platform)
                        (dissoc :repository_url)))))))))
 
 (defn set-public-sector-forges! []
@@ -263,8 +264,10 @@
          :description "code.gouv.fr/sources - Nouvelles versions Awesome"})
        (spit "latest-releases.xml")))
 
-(defn compute-awesome-score [v]
-  (let [files  (:files (:metadata v))
+(defn compute-awesome-score
+  [{:keys [metadata template description fork
+           forks_count subscribers_count stargazers_count]}]
+  (let [files  (:files metadata)
         high   1000
         medium 100
         low    10]
@@ -275,15 +278,15 @@
      ;; Does the repo have a publiccode.yml file?
      (if (:publiccode files) high 0)
      ;; Is the repo a template?
-     (if (:template v) (* medium 2) 0)
+     (if template (* medium 2) 0)
      ;; Does the repo have a CONTRIBUTING.md file?
      (if (:contributing files) medium 0)
      ;; Does the repo have a description?
-     (if (not-empty (:description v)) 0 (- medium))
+     (if (not-empty description) 0 (- medium))
      ;; Is the repo a fork?
-     (if (:fork v) (- high) 0)
+     (if fork (- high) 0)
      ;; Does the repo have many forks?
-     (if-let [f (:forks_count v)]
+     (if-let [f forks_count]
        (condp < f
          1000 high
          100  medium
@@ -291,7 +294,7 @@
          0)
        0)
      ;; Does the repo have many subscribers?
-     (if-let [f (:subscribers_count v)]
+     (if-let [f subscribers_count]
        (condp < f
          100 high
          10  medium
@@ -299,7 +302,7 @@
          0)
        0)
      ;; Does the repo have many star gazers?
-     (if-let [s (:stargazers_count v)]
+     (if-let [s stargazers_count]
        (condp < s
          1000 high
          100  medium
@@ -309,32 +312,35 @@
 
 (defn output-repositories-json []
   (->> @repositories
-       (filter #(let [v (val %)]
-                  (and (not-empty (:owner_url v))
-                       (not-empty (:readme (:files (:metadata v))))
-                       (not (:archived v)))))
-       (map (fn [[_ v]]
-              (let [d     (:description v)
-                    dd    (if (not-empty d) (subs d 0 (min (count d) 200)) "")
-                    fn    (:full_name v)
-                    n     (or (last (re-matches #".+/([^/]+)/?" fn)) fn)
-                    files (:files (:metadata v))]
-                {:a  (compute-awesome-score v)
-                 :u  (:updated_at v)
-                 :d  dd
-                 :f? (:fork v)
-                 :t? (:template v)
+       (filter #(let [{:keys [metadata archived owner_url]} (val %)]
+                  (and (not-empty owner_url)
+                       (not-empty (:readme (:files metadata)))
+                       (not archived))))
+       (map (fn [[_ {:keys [metadata owner_url description full_name
+                            updated_at fork template language
+                            license forks_count platform]
+                     :as   repo_data}]]
+              (let [short_desc (if (not-empty description)
+                                 (subs description 0 (min (count description) 200)) "")
+                    repo_name  (or (last (re-matches #".+/([^/]+)/?" full_name)) full_name)
+                    files      (:files metadata)]
+                {:a  (compute-awesome-score repo_data)
+                 :u  updated_at
+                 :d  short_desc
+                 :f? fork
+                 :t? template
                  :c? (false? (empty? (:contributing files)))
                  :p? (false? (empty? (:publiccode files)))
-                 :l  (:language v)
-                 :li (:license v)
-                 :fn fn
-                 :n  n
-                 :f  (:forks_count v)
-                 :p  (:platform v)
+                 :l  language
+                 :li license
+                 :fn full_name
+                 :n  repo_name
+                 :f  forks_count
+                 :p  platform
                  :o  (when-let [[_ host owner]
-                                (re-matches (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
-                                            (:owner_url v))]
+                                (re-matches
+                                 (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
+                                 owner_url)]
                        (let [host (if (= host "GitHub") "github.com" host)]
                          (str "https://" host "/" owner)))})))
        json/generate-string
@@ -347,7 +353,8 @@
        reverse
        (take 10)
        (map (fn [[r r-data]]
-              (let [name (let [fn (:full_name r-data)] (or (last (re-matches #".+/([^/]+)/?" fn)) fn))]
+              (let [name (let [fn (:full_name r-data)]
+                           (or (last (re-matches #".+/([^/]+)/?" fn)) fn))]
                 {:title       (str "Nouveau dépôt de code source dans code.gouv.fr : " name)
                  :link        (:html_url r-data)
                  :guid        r
@@ -400,7 +407,7 @@
 
 ;; Main execution
 (defn -main [args]
-  (let [{:keys [test only-owners] :as opts} (cli/parse-opts args {:spec cli-options})]
+  (let [{:keys [only-owners] :as opts} (cli/parse-opts args {:spec cli-options})]
     (set-hosts! opts)
     (set-owners!)
     (when-not only-owners (set-repos!))
@@ -427,3 +434,4 @@
       (log/info "Forges:" (count @forges)))))
 
 (-main *command-line-args*)
+
