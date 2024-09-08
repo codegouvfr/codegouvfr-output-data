@@ -107,11 +107,13 @@
 
 (defn set-awesome! []
   (log/info "Fetching public sector forges from comptes-organismes-pubics.yml")
-  (reset! awesome (or (fetch-yaml (:awesome-codegouvfr urls)) {})))
+  (when-let [res (fetch-yaml (:awesome-codegouvfr urls))]
+    (reset! awesome res)))
 
 (defn get-repo-properties [repo_url]
   (->> @repositories
-       (filter #(= (str/lower-case (:html_url (val %))) repo_url))
+       (filter #(= (str/lower-case (:html_url (val %)))
+                   (str/lower-case repo_url)))
        first
        second))
 
@@ -119,10 +121,10 @@
   (let [{:keys [html_url full_name default_branch platform]}
         (get-repo-properties awesome-repo)]
     (condp = platform
-      "github"    (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
-      "gitlab"    (format "%s/-/raw/%s/" html_url default_branch)
-      "sourcehut" (format "%s/blob/%s/" html_url default_branch)
-      nil)))
+      "github.com" (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
+      "gitlab.com" (format "%s/-/raw/%s/" html_url default_branch)
+      "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
+      (format "%s/-/raw/%s/" html_url default_branch))))
 
 (defn update-awesome! []
   (->> @awesome
