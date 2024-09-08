@@ -86,7 +86,7 @@
                  (dissoc e :owner_url)))))))
 
 (defn set-repos! []
-  (doseq [{:keys [repositories_url repositories_count kind]} @hosts]
+  (doseq [{:keys [repositories_url repositories_count url]} @hosts]
     (dotimes [n (int (clojure.math/floor (+ 1 (/ (- repositories_count 1) 1000))))]
       (let [url (str repositories_url (format "?page=%s&per_page=1000" (+ n 1)))]
         (when-let [data (try (fetch-json url)
@@ -97,7 +97,7 @@
             (swap! repositories assoc
                    (str/lower-case (:repository_url e))
                    (-> e
-                       (assoc :platform kind)
+                       (assoc :platform (last (re-matches #"^https://([^/]+)/?$" url)))
                        (dissoc :repository_url)))))))))
 
 (defn set-public-sector-forges! []
