@@ -11,14 +11,14 @@
          '[clojure.tools.logging :as log]
          '[babashka.cli :as cli])
 
-;; Define CLI options
-(def cli-options
-  {:test        {:desc    "Testing?"
-                 :default nil}
-   :only-owners {:desc    "Only handle owners"
-                 :default nil}})
+;;; Define CLI options
 
-;; Initialize atoms
+(def cli-options
+  {:test        {:desc "Testing?" :default nil}
+   :only-owners {:desc "Only handle owners" :default nil}})
+
+;;; Initialize variables
+
 (def hosts (atom ()))
 (def forges (atom ()))
 (def owners (atom {}))
@@ -33,11 +33,157 @@
            :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"
            :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"})
 
-;; Helper function
-(defn toInst [^String s]
+;;; Helper functions
+
+(defn toInst
+  [^String s]
   (.toInstant (clojure.instant/read-instant-date s)))
 
-;; Fetching functions
+(defn map-to-csv [m]
+  (let [columns (keys (first m))
+        header  (map name columns)
+        rows    (mapv #(mapv % columns) m)]
+    (cons header rows)))
+
+(defn get-repo-properties [repo_url]
+  (->> @repositories
+       (filter #(= (str/lower-case (:html_url (val %)))
+                   (str/lower-case repo_url)))
+       first
+       second))
+
+(defn prefix-raw-file [^String awesome-repo]
+  (when (not-empty awesome-repo)
+    (let [{:keys [html_url full_name default_branch platform]}
+          (get-repo-properties awesome-repo)]
+      (condp = platform
+        "github.com" (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
+        "gitlab.com" (format "%s/-/raw/%s/" html_url default_branch)
+        "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
+        (format "%s/-/raw/%s/" html_url default_branch)))))
+
+(defn filter-owners [owners]
+  (->> owners
+       (filter (fn [[_ v]]
+                 (and (not-empty (:html_url v))
+                      (> (:repositories_count v) 0))))))
+
+(defn filter-repositories [repositories]
+  (->> repositories
+       (filter #(let [{:keys [metadata archived owner_url]} (val %)]
+                  (and (not-empty owner_url)
+                       (not-empty (:readme (:files metadata)))
+                       (not archived))))))
+
+(defn owners-to-output [owners]
+  (for [[owner_id {:keys [description repositories_count html_url icon_url name
+                          pso_top_id_name login created_at floss_policy website
+                          forge email location pso]}] owners]
+    {:id  owner_id
+     :r   repositories_count
+     :o   html_url
+     :au  icon_url
+     :n   name
+     :m   pso_top_id_name
+     :l   login
+     :c   created_at
+     :d   (if (not-empty description) (subs description 0 (min (count description) 200)) "")
+     :f   floss_policy
+     :h   website
+     :p   forge
+     :e   email
+     :a   location
+     :pso pso}))
+
+(defn owners-to-csv []
+  (->> @owners
+       filter-owners
+       owners-to-output
+       map-to-csv))
+
+(defn compute-repository-awesome-score
+  [{:keys [metadata template description fork forks_count
+           subscribers_count stargazers_count]}]
+  (let [files  (:files metadata)
+        high   1000
+        medium 100
+        low    10]
+    ;; We assume a readme and not archived
+    (+
+     ;; Does the repo have a license?
+     (if (:license files) high 0)
+     ;; Does the repo have a publiccode.yml file?
+     (if (:publiccode files) high 0)
+     ;; Is the repo a template?
+     (if template (* medium 2) 0)
+     ;; Does the repo have a CONTRIBUTING.md file?
+     (if (:contributing files) medium 0)
+     ;; Does the repo have a description?
+     (if (not-empty description) 0 (- medium))
+     ;; Is the repo a fork?
+     (if fork (- high) 0)
+     ;; Does the repo have many forks?
+     (if-let [f forks_count]
+       (condp < f
+         1000 high
+         100  medium
+         10   low
+         0)
+       0)
+     ;; Does the repo have many subscribers?
+     (if-let [f subscribers_count]
+       (condp < f
+         100 high
+         10  medium
+         1   low
+         0)
+       0)
+     ;; Does the repo have many star gazers?
+     (if-let [s stargazers_count]
+       (condp < s
+         1000 high
+         100  medium
+         10   low
+         0)
+       0))))
+
+(defn repositories-to-output [repositories]
+  (for [[_ {:keys [metadata owner_url description full_name
+                   updated_at fork template language
+                   license forks_count platform]
+            :as   repo_data}] repositories]
+    (let [short_desc (if (not-empty description)
+                       (subs description 0 (min (count description) 200)) "")
+          repo_name  (or (last (re-matches #".+/([^/]+)/?" full_name)) full_name)
+          files      (:files metadata)]
+      {:a  (compute-repository-awesome-score repo_data)
+       :u  updated_at
+       :d  short_desc
+       :f? fork
+       :t? template
+       :c? (false? (empty? (:contributing files)))
+       :p? (false? (empty? (:publiccode files)))
+       :l  language
+       :li license
+       :fn full_name
+       :n  repo_name
+       :f  forks_count
+       :p  platform
+       :o  (when-let [[_ host owner]
+                      (re-matches
+                       (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
+                       owner_url)]
+             (let [host (if (= host "GitHub") "github.com" host)]
+               (str "https://" host "/" owner)))})))
+
+(defn repositories-to-csv []
+  (->> @repositories
+       filter-repositories
+       repositories-to-output
+       map-to-csv))
+
+;;; Fetching functions
+
 (defn fetch-json [url]
   (let [res (try (curl/get url)
                  (catch Exception _
@@ -66,7 +212,8 @@
        fetch-json
        (into {})))
 
-;; Set hosts, owners, repositories and public forges
+;;; Set hosts, owners, repositories and public forges
+
 (defn set-hosts! [& [opts]]
   (log/info "Fetching hosts from" (:hosts urls))
   (let [res (or (fetch-json (:hosts urls)) ())]
@@ -111,23 +258,6 @@
   (when-let [res (fetch-yaml (:awesome-codegouvfr urls))]
     (reset! awesome res)))
 
-(defn get-repo-properties [repo_url]
-  (->> @repositories
-       (filter #(= (str/lower-case (:html_url (val %)))
-                   (str/lower-case repo_url)))
-       first
-       second))
-
-(defn prefix-raw-file [^String awesome-repo]
-  (when (not-empty awesome-repo)
-    (let [{:keys [html_url full_name default_branch platform]}
-          (get-repo-properties awesome-repo)]
-      (condp = platform
-        "github.com" (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
-        "gitlab.com" (format "%s/-/raw/%s/" html_url default_branch)
-        "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
-        (format "%s/-/raw/%s/" html_url default_branch)))))
-
 (defn update-awesome! []
   (->> @awesome
        (map
@@ -137,13 +267,6 @@
               [k (conj v res)]
               [k v]))))
        (reset! awesome)))
-
-(defn output-awesome-json []
-  (->> @awesome
-       (map (fn [[k v]] (assoc v :url k)))
-       flatten
-       json/generate-string
-       (spit "awesome.json")))
 
 (defn set-awesome-releases! []
   (->> @awesome
@@ -161,10 +284,7 @@
        (filter seq)
        (reset! awesome-releases)))
 
-(defn output-releases-json []
-  (spit "releases.json" (json/generate-string @awesome-releases)))
 
-;; Processing function
 (defn update-owners! []
   (doseq [[f forge-data] @forges]
     (let [f (if (= f "github.com") "github" f)]
@@ -194,32 +314,32 @@
         (swap! owners update-in [k]
                conj {:pso_top_id top_id :pso_top_id_name top_id_name})))))
 
-;; Output functions
+;;; Output functions
+
+(defn output-awesome-json []
+  (->> @awesome
+       (map (fn [[k v]] (assoc v :url k)))
+       flatten
+       json/generate-string
+       (spit "awesome.json")))
+
+(defn output-releases-json []
+  (spit "releases.json" (json/generate-string @awesome-releases)))
+
 (defn output-owners-json []
-  (->> (filter (fn [[_ v]]
-                 (and (not-empty (:html_url v))
-                      (> (:repositories_count v) 0)))
-               @owners)
-       (map (fn [[k v]]
-              (let [d  (:description v)
-                    dd (if (not-empty d) (subs d 0 (min (count d) 200)) "")]
-                {:id  k
-                 :r   (:repositories_count v)
-                 :o   (:html_url v)
-                 :au  (:icon_url v)
-                 :n   (:name v)
-                 :m   (:pso_top_id_name v)
-                 :l   (:login v)
-                 :c   (:created_at v)
-                 :d   dd
-                 :f   (:floss_policy v)
-                 :h   (:website v)
-                 :p   (:forge v)
-                 :e   (:email v)
-                 :a   (:location v)
-                 :pso (:pso v)})))
+  (->> @owners
+       filter-owners
+       owners-to-output
        json/generate-string
        (spit "owners.json")))
+
+(defn output-owners-csv []
+  (with-open [file (io/writer "owners.csv")]
+    (csv/write-csv file (owners-to-csv))))
+
+(defn output-repositories-csv []
+  (with-open [file (io/writer "repositories.csv")]
+    (csv/write-csv file (repositories-to-csv))))
 
 (defn output-latest-sill-xml []
   (->> (fetch-json (:sill urls))
@@ -273,85 +393,10 @@
          :description "code.gouv.fr/sources - Nouvelles versions Awesome"})
        (spit "latest-releases.xml")))
 
-(defn compute-awesome-score
-  [{:keys [metadata template description fork
-           forks_count subscribers_count stargazers_count]}]
-  (let [files  (:files metadata)
-        high   1000
-        medium 100
-        low    10]
-    ;; We assume a readme and not archived
-    (+
-     ;; Does the repo have a license?
-     (if (:license files) high 0)
-     ;; Does the repo have a publiccode.yml file?
-     (if (:publiccode files) high 0)
-     ;; Is the repo a template?
-     (if template (* medium 2) 0)
-     ;; Does the repo have a CONTRIBUTING.md file?
-     (if (:contributing files) medium 0)
-     ;; Does the repo have a description?
-     (if (not-empty description) 0 (- medium))
-     ;; Is the repo a fork?
-     (if fork (- high) 0)
-     ;; Does the repo have many forks?
-     (if-let [f forks_count]
-       (condp < f
-         1000 high
-         100  medium
-         10   low
-         0)
-       0)
-     ;; Does the repo have many subscribers?
-     (if-let [f subscribers_count]
-       (condp < f
-         100 high
-         10  medium
-         1   low
-         0)
-       0)
-     ;; Does the repo have many star gazers?
-     (if-let [s stargazers_count]
-       (condp < s
-         1000 high
-         100  medium
-         10   low
-         0)
-       0))))
-
 (defn output-repositories-json []
   (->> @repositories
-       (filter #(let [{:keys [metadata archived owner_url]} (val %)]
-                  (and (not-empty owner_url)
-                       (not-empty (:readme (:files metadata)))
-                       (not archived))))
-       (map (fn [[_ {:keys [metadata owner_url description full_name
-                            updated_at fork template language
-                            license forks_count platform]
-                     :as   repo_data}]]
-              (let [short_desc (if (not-empty description)
-                                 (subs description 0 (min (count description) 200)) "")
-                    repo_name  (or (last (re-matches #".+/([^/]+)/?" full_name)) full_name)
-                    files      (:files metadata)]
-                {:a  (compute-awesome-score repo_data)
-                 :u  updated_at
-                 :d  short_desc
-                 :f? fork
-                 :t? template
-                 :c? (false? (empty? (:contributing files)))
-                 :p? (false? (empty? (:publiccode files)))
-                 :l  language
-                 :li license
-                 :fn full_name
-                 :n  repo_name
-                 :f  forks_count
-                 :p  platform
-                 :o  (when-let [[_ host owner]
-                                (re-matches
-                                 (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
-                                 owner_url)]
-                       (let [host (if (= host "GitHub") "github.com" host)]
-                         (str "https://" host "/" owner)))})))
+       filter-repositories
+       repositories-to-output
        json/generate-string
        (spit "repositories.json")))
 
@@ -427,10 +472,12 @@
       (set-awesome-releases!)
       (update-awesome!))
     (output-owners-json)
+    (output-owners-csv)
     (when-not only-owners 
       (output-latest-sill-xml)
       (output-latest-owners-xml)
       (output-repositories-json)
+      (output-repositories-csv)
       (output-latest-repositories-xml)
       (output-latest-releases-xml)
       (output-forges-csv)
