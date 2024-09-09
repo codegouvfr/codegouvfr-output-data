@@ -14,8 +14,18 @@
 ;;; Define CLI options
 
 (def cli-options
-  {:test        {:desc "Testing?" :default nil}
-   :only-owners {:desc "Only handle owners" :default nil}})
+  {:help        {:alias :h
+                 :desc  "Display this help message"}
+   :test        {:alias :t
+                 :desc  "Run for testing purpose"}
+   :only-owners {:alias :o
+                 :desc  "Only fetch/export owners data"}})
+
+(defn show-help
+  []
+  (println
+   (cli/format-opts
+    (merge {:spec cli-options} {:order (vec (keys cli-options))}))))
 
 ;;; Initialize variables
 
@@ -75,6 +85,23 @@
                        (not-empty (:readme (:files metadata)))
                        (not archived))))))
 
+(def owners-keys-mapping
+  {:id  :id
+   :r   :repositories_count
+   :o   :html_url
+   :au  :icon_url
+   :n   :name
+   :m   :ministry
+   :l   :login
+   :c   :created_at
+   :d   :description
+   :f   :floss_policy
+   :h   :website
+   :p   :forge
+   :e   :email
+   :a   :location
+   :pso :organization})
+
 (defn owners-to-output [owners]
   (for [[owner_id {:keys [description repositories_count html_url icon_url name
                           pso_top_id_name login created_at floss_policy website
@@ -96,10 +123,11 @@
      :pso pso}))
 
 (defn owners-to-csv []
-  (->> @owners
-       filter-owners
-       owners-to-output
-       map-to-csv))
+  (as-> @owners o
+    (filter-owners o)
+    (owners-to-output o)
+    (map #(set/rename-keys % owners-keys-mapping) o)
+    (map-to-csv o)))
 
 (defn compute-repository-awesome-score
   [{:keys [metadata template description fork forks_count
@@ -147,6 +175,22 @@
          0)
        0))))
 
+(def repositories-keys-mapping
+  {:a  :awesome-score
+   :u  :updated_at
+   :d  :short_desc
+   :f? :fork
+   :t? :template
+   :c? :contributing
+   :p? :publiccode
+   :l  :language
+   :li :license
+   :fn :full_name
+   :n  :repo_name
+   :f  :forks_count
+   :p  :platform
+   :o  :owner})
+
 (defn repositories-to-output [repositories]
   (for [[_ {:keys [metadata owner_url description full_name
                    updated_at fork template language
@@ -177,10 +221,11 @@
                (str "https://" host "/" owner)))})))
 
 (defn repositories-to-csv []
-  (->> @repositories
-       filter-repositories
-       repositories-to-output
-       map-to-csv))
+  (as-> @repositories r
+    (filter-repositories r)
+    (repositories-to-output r)
+    (map #(set/rename-keys % repositories-keys-mapping) r)
+    (map-to-csv r)))
 
 ;;; Fetching functions
 
@@ -219,7 +264,7 @@
   (let [res (or (fetch-json (:hosts urls)) ())]
     (reset! hosts
             (if (or (:test opts) (:owners opts))
-              (take 1 res)
+              (take 2 (shuffle res))
               res))))
 
 (defn set-owners! []
@@ -259,14 +304,13 @@
     (reset! awesome res)))
 
 (defn update-awesome! []
-  (->> @awesome
-       (map
-        (fn [[k v]]
-          (when-let [pfx (not-empty (prefix-raw-file (str/lower-case k)))]
-            (if-let [res (fetch-yaml (str pfx "publiccode.yml"))]
-              [k (conj v res)]
-              [k v]))))
-       (reset! awesome)))
+  (as-> @awesome a
+    (for [[k v] a]
+      (when-let [pfx (not-empty (prefix-raw-file (str/lower-case k)))]
+        (if-let [res (fetch-yaml (str pfx "publiccode.yml"))]
+          [k (conj v res)]
+          [k v])))
+    (reset! awesome a)))
 
 (defn set-awesome-releases! []
   (->> @awesome
@@ -283,7 +327,6 @@
        flatten
        (filter seq)
        (reset! awesome-releases)))
-
 
 (defn update-owners! []
   (doseq [[f forge-data] @forges]
@@ -326,12 +369,14 @@
 (defn output-releases-json []
   (spit "releases.json" (json/generate-string @awesome-releases)))
 
-(defn output-owners-json []
-  (->> @owners
-       filter-owners
-       owners-to-output
-       json/generate-string
-       (spit "owners.json")))
+(defn output-owners-json [& [extended]]
+  (as-> @owners o
+    (filter-owners o)
+    (owners-to-output o)
+    (mapv identity o)
+    (if-not extended o (map #(set/rename-keys % owners-keys-mapping) o))
+    (json/generate-string o)
+    (spit (if extended "owners_full.json" "owners.json") o)))
 
 (defn output-owners-csv []
   (with-open [file (io/writer "owners.csv")]
@@ -393,12 +438,13 @@
          :description "code.gouv.fr/sources - Nouvelles versions Awesome"})
        (spit "latest-releases.xml")))
 
-(defn output-repositories-json []
-  (->> @repositories
-       filter-repositories
-       repositories-to-output
-       json/generate-string
-       (spit "repositories.json")))
+(defn output-repositories-json [& [extended]]
+  (as-> @repositories r
+    (filter-repositories r)
+    (repositories-to-output r)
+    (if-not extended r (map #(set/rename-keys % repositories-keys-mapping) r))
+    (json/generate-string r)
+    (spit (if extended "repositories_full.json" "repositories.json") r)))
 
 (defn output-latest-repositories-xml []
   (->> @repositories
@@ -461,32 +507,37 @@
 
 ;; Main execution
 (defn -main [args]
-  (let [{:keys [only-owners] :as opts} (cli/parse-opts args {:spec cli-options})]
-    (set-hosts! opts)
-    (set-owners!)
-    (when-not only-owners (set-repos!))
-    (set-public-sector-forges!)
-    (update-owners!)
-    (when-not only-owners
-      (set-awesome!)
-      (set-awesome-releases!)
-      (update-awesome!))
-    (output-owners-json)
-    (output-owners-csv)
-    (when-not only-owners 
-      (output-latest-sill-xml)
-      (output-latest-owners-xml)
-      (output-repositories-json)
-      (output-repositories-csv)
-      (output-latest-repositories-xml)
-      (output-latest-releases-xml)
-      (output-forges-csv)
-      (output-stats-json)
-      (output-awesome-json)
-      (output-releases-json)
-      (log/info "Hosts:" (count @hosts))
-      (log/info "Owners:" (count @owners))
-      (log/info "Repositories:" (count @repositories))
-      (log/info "Forges:" (count @forges)))))
+  (let [{:keys [only-owners] :as opts}
+        (cli/parse-opts args {:spec cli-options})]
+    (if (or (:help opts) (:h opts))
+      (println (show-help))
+      (do (set-hosts! opts)
+          (set-owners!)
+          (when-not only-owners (set-repos!))
+          (set-public-sector-forges!)
+          (update-owners!)
+          (when-not only-owners
+            (set-awesome!)
+            (set-awesome-releases!)
+            (update-awesome!))
+          (output-owners-json)
+          (output-owners-json :extended)
+          (output-owners-csv)
+          (when-not only-owners 
+            (output-latest-sill-xml)
+            (output-latest-owners-xml)
+            (output-repositories-json)
+            (output-repositories-json :extended)
+            (output-repositories-csv)
+            (output-latest-repositories-xml)
+            (output-latest-releases-xml)
+            (output-forges-csv)
+            (output-stats-json)
+            (output-awesome-json)
+            (output-releases-json)
+            (log/info "Hosts:" (count @hosts))
+            (log/info "Owners:" (count @owners))
+            (log/info "Repositories:" (count @repositories))
+            (log/info "Forges:" (count @forges)))))))
 
 (-main *command-line-args*)
