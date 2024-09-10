@@ -23,19 +23,22 @@
 
 (defn write-props! [forge & without-groups?]
   (let [re (if without-groups? #"https://([^/]+)" #"https://[^/]+/([^:]+)")]
-    (doseq [[group properties] (second forge)]
+    (doseq [[group {:strs [ignored_since service_of pso pso_id floss_policy ospo_url]}]
+            (second forge)]
       (when-let [g (last (re-find re group))]
         (when-not without-groups? (spt! (str "    " g ":\n")))
         (let [indent (if without-groups? "  " "      ")]
-          (when-let [d (get properties "ignored_since")]
+          (when-let [d ignored_since]
             (spt! (str indent "ignored_since: "
                        (.format (java.text.SimpleDateFormat. "yyyy-MM-dd") d) "\n")))
-          (when-let [pso (first (get properties "service_of"))]
+          (when-let [pso (first pso)]
             (spt! (str indent "pso: " pso "\n")))
-          (when-let [pso_id (first (get properties "pso_id"))]
+          (when-let [pso_id (first pso_id)]
             (spt! (str indent "pso_id: " pso_id "\n")))
-          (when (first (get properties "floss_policy"))
-            (spt! (str indent "floss_policy: " (first (get properties "floss_policy")) "\n"))))))))
+          (when-let [ospo_url (first ospo_url)]
+            (spt! (str indent "ospo_url: " ospo_url "\n")))
+          (when-let [floss_policy (first floss_policy)]
+            (spt! (str indent "floss_policy: " floss_policy "\n"))))))))
 
 (doseq [forge orgs]
   ;; For each forge, spit its domain name:
