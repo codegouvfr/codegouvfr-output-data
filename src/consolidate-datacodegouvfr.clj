@@ -4,12 +4,18 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: LICENSE.txt
 
+;; To-do:
+;; - Upload data on data.gouv.fr
+
 (deps/add-deps '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
 (deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.8.60"}}})
+(deps/add-deps '{:deps {io.github.lispyclouds/bblgum
+                        {:git/sha "b1b939ae5ae522a55499a8260b450e8898f77781"}}})
 
 (require '[clj-rss.core :as rss]
          '[clojure.tools.logging :as log]
-         '[babashka.cli :as cli])
+         '[babashka.cli :as cli]
+         '[bblgum.core :as b])
 
 ;;; Define CLI options
 
@@ -504,6 +510,10 @@
           :top_languages     (get-top-x :language)}
          json/generate-string
          (spit "stats.json"))))
+
+;; Testing
+;; (defn b-display-owners []
+;;   (b/gum :table :in (clojure.java.io/input-stream "owners.csv")))
 
 ;; Main execution
 (defn -main [args]
