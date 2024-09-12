@@ -258,8 +258,8 @@
   (log/info "Fetching annuaire at" (:annuaire_sup urls))
   (->> (:annuaire_sup urls)
        fetch-json
-       (map (fn [{:keys [id service_top nom]}]
-              [id {:top service_top :nom nom}]))
+       (map (fn [{:keys [id service_top_id nom]}]
+              [id {:top service_top_id :nom nom}]))
        (into {})))
 
 (defn fetch-annuaire-tops []
