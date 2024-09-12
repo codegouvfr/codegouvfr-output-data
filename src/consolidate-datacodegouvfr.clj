@@ -6,6 +6,7 @@
 
 ;; To-do:
 ;; - Upload data on data.gouv.fr
+;; - Remove output-latest-owners.xml ?
 
 (deps/add-deps '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
 (deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.8.60"}}})
@@ -92,43 +93,45 @@
                        (not archived))))))
 
 (def owners-keys-mapping
-  {:id :id
-   :r  :repositories_count
-   :o  :html_url
+  {:a  :location
    :au :icon_url
-   :n  :name
-   :m  :ministry
-   :l  :login
    :c  :created_at
    :d  :description
-   :f  :floss_policy
-   :os :ospo_url
-   :h  :website
-   :p  :forge
    :e  :email
-   :a  :location
-   :ps :organization})
+   :f  :floss_policy
+   :h  :website
+   :id :id
+   :l  :login
+   :m  :ministry
+   :n  :name
+   :o  :html_url
+   :os :ospo_url
+   :p  :forge
+   :ps :organization
+   :r  :repositories_count
+   :s  :followers})
 
 (defn owners-to-output [owners]
   (for [[owner_id {:keys [description repositories_count html_url icon_url name
-                          pso_top_id_name login created_at floss_policy ospo_url
-                          website forge email location pso]}] owners]
-    {:id owner_id
-     :r  repositories_count
-     :o  html_url
+                          pso_top_id_name login followers created_at floss_policy
+                          ospo_url website forge email location pso]}] owners]
+    {:a  location
      :au icon_url
-     :n  name
-     :m  pso_top_id_name
-     :l  login
      :c  created_at
      :d  (if (not-empty description) (subs description 0 (min (count description) 200)) "")
+     :e  email
      :f  floss_policy
      :h  website
-     :p  forge
-     :e  email
-     :a  location
+     :id owner_id
+     :l  login
+     :m  pso_top_id_name
+     :n  name
+     :o  html_url
      :os ospo_url
-     :ps pso}))
+     :p  forge
+     :ps pso
+     :r  repositories_count
+     :s  followers}))
 
 (defn owners-to-csv []
   (as-> @owners o
