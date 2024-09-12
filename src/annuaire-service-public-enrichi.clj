@@ -52,7 +52,6 @@
     "b128cdf9-1bf5-4294-9470-2041e8ecd1f6"
     })
 
-
 (defn fetch-annuaire-zip []
   (log/info "Fetching annuaire as a zip file from data.gouv.fr...")
   (let [annuaire-zip-url "https://www.data.gouv.fr/fr/datasets/r/d0158eb2-6772-49c2-afb1-732e573ba1e5"
@@ -71,16 +70,22 @@
        (into {})
        (reset! annuaire)))
 
+(defn get-name-from-id [^String id]
+  (:nom (get @annuaire id)))
+
 (defn add-service-sup! []
   (log/info "Adding service_sup...")
-  (doseq [a (filter #(< 0 (count (:hierarchie (val %)))) @annuaire)]
-    (doseq [b (filter #(= (:type_hierarchie %) "Service Fils") (:hierarchie (val a)))]
-      (swap! annuaire update-in [(:service b)] conj {:service_sup (key a)}))))
+  (doseq [[s_id s_data] (filter #(< 0 (count (:hierarchie (val %)))) @annuaire)]
+    (doseq [b (filter #(= (:type_hierarchie %) "Service Fils") (:hierarchie s_data))]
+      (swap! annuaire update-in [(:service b)]
+             conj
+             {:service_sup_id  s_id
+              :service_sup_nom (get-name-from-id s_id)}))))
 
 (defn get-ancestor [service_sup_id]
   (let [seen (atom #{})]
     (loop [s_id service_sup_id]
-      (let [sup (:service_sup (get @annuaire s_id))]
+      (let [sup (:service_sup_id (get @annuaire s_id))]
         (if (or (nil? sup)
                 (contains? @seen s_id)
                 (some #{s_id} tops))
@@ -89,16 +94,19 @@
               (recur sup)))))))
 
 (defn add-service-top! []
-  (doseq [a (filter #(seq (:service_sup (val %))) @annuaire)]
-    (swap! annuaire update-in
-           [(key a)]
-           conj {:service_top (get-ancestor (:service_sup (val a)))})))
+  (doseq [[s_id s_data] (filter #(seq (:service_sup_id (val %))) @annuaire)]
+    (let [ancestor (get-ancestor (:service_sup_id s_data))]
+      (swap! annuaire update-in
+             [s_id]
+             conj
+             {:service_top_id   ancestor
+              :service_top_name (get-name-from-id ancestor)}))))
 
 (defn output-annuaire-sup []
   (log/info "Output annuaire_sup.json...")
   (spit "annuaire_sup.json"
         (json/generate-string
-         (map (fn [[k v]] (conj v {:id k})) @annuaire)
+         (for [[k v] @annuaire] (conj (dissoc (into {} v) :hierarchie) {:id k}))
          {:pretty true})))
 
 (defn output-annuaire-tops []
@@ -106,8 +114,6 @@
   (spit "annuaire_tops.json"
         (-> (map #(hash-map % (:nom (get @annuaire %))) tops)
             (json/generate-string {:pretty true}))))
-
-(some #{"c"} #{"a" "b"})
 
 (defn -main []
   (fetch-annuaire-zip)
@@ -118,4 +124,3 @@
   (output-annuaire-tops))
 
 (-main)
-
