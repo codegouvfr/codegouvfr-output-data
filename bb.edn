@@ -4,6 +4,6 @@
  :license        {:name "Eclipse Public License - v 2.0"
                   :url  "http://www.eclipse.org/legal/epl-v20.html"}
  :min-bb-version "0.4.0"
- :tasks          {clean (shell "bash -c"
-                               (str "rm -rf *json *xml *csv *yml"
-                                    "src/*json src/*xml src/*csv src/*yml"))}}
+ :tasks          {clean
+                  (shell "bash -c"
+                         "rm -rf *json *xml *csv *yml src/*json src/*xml src/*csv src/*yml")}}
