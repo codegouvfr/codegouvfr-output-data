@@ -268,19 +268,6 @@
 
 ;;; Set annuaire, hosts, owners, repositories and public forges
 
-(defn set-annuaire! []
-  ;; First download annuaire.json
-  (fetch-annuaire-zip)
-  ;; Then set the @annuaire atom with a subset of annuaire.json
-  (->> (json/parse-string (slurp "annuaire.json") true)
-       :service
-       (map (fn [a] [(:id a) (select-keys a [:hierarchie :nom :sigle])]))
-       (into {})
-       (reset! annuaire))
-  ;; Then set annuaire tops
-  (when-let [res (fetch-yaml (:top_organizations urls))]
-    (reset! annuaire_tops (into #{} (keys res)))))
-
 (defn get-name-from-annuaire-id [^String id]
   (:nom (get @annuaire id)))
 
@@ -314,7 +301,19 @@
              {:service_top_id   ancestor
               :service_top_name (get-name-from-annuaire-id ancestor)}))))
 
-(defn update-annuaire! []
+(defn set-annuaire! []
+  ;; First download annuaire.json
+  (fetch-annuaire-zip)
+  ;; Then set the @annuaire atom with a subset of annuaire.json
+  (->> (json/parse-string (slurp "annuaire.json") true)
+       :service
+       (map (fn [a] [(:id a) (select-keys a [:hierarchie :nom :sigle])]))
+       (into {})
+       (reset! annuaire))
+  ;; Then set annuaire tops
+  (when-let [res (fetch-yaml (:top_organizations urls))]
+    (reset! annuaire_tops (into #{} (keys res))))
+  ;; Update annuaire with services sup and top
   (add-service-sup!)
   (add-service-top!))
 
@@ -322,11 +321,47 @@
   (log/info "Fetching hosts from" (:hosts urls))
   (let [res (or (fetch-json (:hosts urls)) ())]
     (reset! hosts
-            (if (or (:test opts) (:owners opts))
+            (if (or (:test opts) (:only-owners opts))
               (take 2 (shuffle res))
               res))))
 
+(defn update-owners! []
+  (doseq [[f forge-data] @forges]
+    (let [f (if (= f "github.com") "github" f)]
+      (if-let [groups (get forge-data "owners")]
+        (doseq [[group group-data] groups]
+          (let [owner_url
+                (str/lower-case
+                 (format (str (:hosts urls) "/%s/owners/%s") f group))
+                {:strs [pso pso_id floss_policy ospo_url]} group-data]
+            (swap! owners update-in [owner_url]
+                   #(assoc %
+                           :pso pso
+                           :pso_id pso_id
+                           :floss_policy floss_policy
+                           :ospo_url ospo_url
+                           :forge (get forge-data "forge")))))
+        (doseq [[k _] (filter #(str/includes? (key %) (str/lower-case f)) @owners)]
+          (let [{:strs [pso pso_id floss_policy ospo_url forge]} forge-data]
+            (swap! owners update-in [k]
+                   #(assoc %
+                           :pso pso
+                           :pso_id pso_id
+                           :floss_policy floss_policy
+                           :ospo_url ospo_url
+                           :forge forge)))))))
+  ;; Add top_id and top_id_name to owners
+  (doseq [[k {:keys [pso_id]}] (filter #(:pso_id (val %)) @owners)]
+    (let [top_id      (if (some #{pso_id} @annuaire_tops)
+                        pso_id
+                        (:service_top_id (get @annuaire pso_id)))
+          top_id_name (:nom (get @annuaire top_id))]
+      (swap! owners update-in [k]
+             conj {:pso_top_id      top_id
+                   :pso_top_id_name top_id_name}))))
+
 (defn set-owners! []
+  ;; Set owners by fetching data
   (doseq [{:keys [owners_url]} @hosts]
     (let [url (str owners_url "?per_page=1000")]
       (when-let [data (fetch-json url)]
@@ -334,7 +369,9 @@
         (doseq [e (filter #(= (:kind %) "organization") data)]
           (swap! owners assoc
                  (str/lower-case (:owner_url e))
-                 (dissoc e :owner_url)))))))
+                 (dissoc e :owner_url))))))
+  ;; Update owners by using forge data
+  (update-owners!))
 
 (defn set-repos! []
   (doseq [{:keys [repositories_url repositories_count url]} @hosts]
@@ -386,41 +423,6 @@
        flatten
        (filter seq)
        (reset! awesome-releases)))
-
-(defn update-owners! []
-  (doseq [[f forge-data] @forges]
-    (let [f (if (= f "github.com") "github" f)]
-      (if-let [groups (get forge-data "owners")]
-        (doseq [[group group-data] groups]
-          (let [owner_url
-                (str/lower-case
-                 (format (str (:hosts urls) "/%s/owners/%s") f group))
-                {:strs [pso pso_id floss_policy ospo_url]} group-data]
-            (swap! owners update-in [owner_url]
-                   #(assoc %
-                           :pso pso
-                           :pso_id pso_id
-                           :floss_policy floss_policy
-                           :ospo_url ospo_url
-                           :forge (get forge-data "forge")))))
-        (doseq [[k _] (filter #(str/includes? (key %) (str/lower-case f)) @owners)]
-          (let [{:strs [pso pso_id floss_policy ospo_url forge]} forge-data]
-            (swap! owners update-in [k]
-                   #(assoc %
-                           :pso pso
-                           :pso_id pso_id
-                           :floss_policy floss_policy
-                           :ospo_url ospo_url
-                           :forge forge)))))))
-  ;; Add top_id and top_id_name to owners
-  (doseq [[k {:keys [pso_id]}] (filter #(:pso_id (val %)) @owners)]
-    (let [top_id      (if (some #{pso_id} @annuaire_tops)
-                        pso_id
-                        (:service_top_id (get @annuaire pso_id)))
-          top_id_name (:nom (get @annuaire top_id))]
-      (swap! owners update-in [k]
-             conj {:pso_top_id      top_id
-                   :pso_top_id_name top_id_name}))))
 
 ;;; Output functions
 
@@ -633,46 +635,53 @@
 ;; (defn b-display-owners []
 ;;   (b/gum :table :in (clojure.java.io/input-stream "owners.csv" :height 10)))
 
+(defn set-data! [{:keys [only-owners] :as opts}]
+  (set-public-sector-forges!)
+  (set-hosts! opts)
+  (set-owners!)
+  (when-not only-owners
+    (set-annuaire!)
+    (set-repos!)
+    (set-awesome!)
+    (set-awesome-releases!)
+    (update-awesome!)))
+
+(defn output-data! [only-owners]
+  (output-owners-json)
+  (output-owners-json :extended)
+  (output-owners-csv)
+  (when-not only-owners
+    (output-annuaire-sup)
+    (output-latest-sill-xml)
+    (output-latest-owners-xml)
+    (output-repositories-json)
+    (output-repositories-json :extended)
+    (output-repositories-csv)
+    (output-latest-repositories-xml)
+    (output-latest-releases-xml)
+    (output-forges-csv)
+    (output-stats-json)
+    (output-awesome-json)
+    (output-releases-json)
+    (output-formations-json)
+    (output-sill-providers)
+    (output-sill-latest-xml)))
+
+(defn display-data! [only-owners]
+  (log/info "Hosts:" (count @hosts))
+  (log/info "Owners:" (count @owners))
+  (when-not only-owners
+    (log/info "Repositories:" (count @repositories))
+    (log/info "Awesome codegouvfr:" (count @awesome))))
+
 ;; Main execution
 (defn -main [args]
   (let [{:keys [only-owners] :as opts}
         (cli/parse-opts args {:spec cli-options})]
     (if (or (:help opts) (:h opts))
       (println (show-help))
-      (do
-        (set-annuaire!)
-        (update-annuaire!)
-        (set-hosts! opts)
-        (set-owners!)
-        (when-not only-owners (set-repos!))
-        (set-public-sector-forges!)
-        (update-owners!)
-        (when-not only-owners
-          (set-awesome!)
-          (set-awesome-releases!)
-          (update-awesome!))
-        (output-owners-json)
-        (output-owners-json :extended)
-        (output-owners-csv)
-        (when-not only-owners
-          (output-annuaire-sup)
-          (output-latest-sill-xml)
-          (output-latest-owners-xml)
-          (output-repositories-json)
-          (output-repositories-json :extended)
-          (output-repositories-csv)
-          (output-latest-repositories-xml)
-          (output-latest-releases-xml)
-          (output-forges-csv)
-          (output-stats-json)
-          (output-awesome-json)
-          (output-releases-json)
-          (output-formations-json)
-          (output-sill-providers)
-          (output-sill-latest-xml)
-          (log/info "Hosts:" (count @hosts))
-          (log/info "Owners:" (count @owners))
-          (log/info "Repositories:" (count @repositories))
-          (log/info "Forges:" (count @forges)))))))
+      (do (set-data! opts)
+          (output-data! only-owners)
+          (display-data! only-owners)))))
 
 (-main *command-line-args*)
