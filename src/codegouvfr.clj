@@ -579,9 +579,9 @@
 
 (defn output-formations-json []
   (when-let [res (fetch-yaml (:formations urls))]
-    (-> res
-        json/generate-string
-        (spit "formations-logiciels-libres.json"))))
+    (->> res
+         json/generate-string
+         (spit "formations-logiciels-libres.json"))))
 
 (defn output-sill-providers []
   (let [cdl  (->> (fetch-json (:cdl-providers urls))
