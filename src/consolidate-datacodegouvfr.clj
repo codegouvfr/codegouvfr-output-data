@@ -4,10 +4,6 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: LICENSE.txt
 
-;; To-do:
-;; - Upload data on data.gouv.fr
-;; - Remove output-latest-owners.xml ?
-
 (deps/add-deps '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
 (deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.8.60"}}})
 (deps/add-deps '{:deps {io.github.lispyclouds/bblgum
