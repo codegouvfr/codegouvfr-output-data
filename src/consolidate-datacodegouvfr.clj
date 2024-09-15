@@ -32,6 +32,8 @@
 
 ;;; Initialize variables
 
+(def annuaire (atom {}))
+(def annuaire_tops (atom {}))
 (def hosts (atom ()))
 (def forges (atom ()))
 (def owners (atom {}))
@@ -41,8 +43,7 @@
 
 (def urls {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
            :sill                       "https://code.gouv.fr/sill/api/sill.json"
-           :annuaire_sup               "https://code.gouv.fr/data/annuaire_sup.json"
-           :annuaire_tops              "https://code.gouv.fr/data/annuaire_tops.json"
+           :top_organizations          "https://code.gouv.fr/data/top_organizations.yml"
            :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"
            :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"})
 
@@ -250,21 +251,68 @@
     (when (= (:status res) 200)
       (yaml/parse-string (:body res) :keywords false))))
 
-(defn fetch-annuaire []
-  (log/info "Fetching annuaire at" (:annuaire_sup urls))
-  (->> (:annuaire_sup urls)
-       fetch-json
-       (map (fn [{:keys [id service_top_id nom]}]
-              [id {:top service_top_id :nom nom}]))
-       (into {})))
+(defn fetch-annuaire-zip []
+  (log/info "Fetching annuaire as a zip file from data.gouv.fr...")
+  (let [annuaire-zip-url "https://www.data.gouv.fr/fr/datasets/r/d0158eb2-6772-49c2-afb1-732e573ba1e5"
+        stream           (-> (curl/get annuaire-zip-url {:as :bytes})
+                             :body
+                             (io/input-stream)
+                             (java.util.zip.ZipInputStream.))]
+    (.getNextEntry stream)
+    (log/info "Output annuaire.json")
+    (io/copy stream (io/file "annuaire.json"))))
 
-(defn fetch-annuaire-tops []
-  (log/info "Fetching annuaire tops at" (:annuaire_tops urls))
-  (->> (:annuaire_tops urls)
-       fetch-json
-       (into {})))
+;;; Set annuaire, hosts, owners, repositories and public forges
 
-;;; Set hosts, owners, repositories and public forges
+(defn set-annuaire! []
+  ;; First download annuaire.json
+  (fetch-annuaire-zip)
+  ;; Then set the @annuaire atom with a subset of annuaire.json
+  (->> (json/parse-string (slurp "annuaire.json") true)
+       :service
+       (map (fn [a] [(:id a) (select-keys a [:hierarchie :nom :sigle])]))
+       (into {})
+       (reset! annuaire))
+  ;; Then set annuaire tops
+  (when-let [res (fetch-yaml (:top_organizations urls))]
+    (reset! annuaire_tops (into #{} (keys res)))))
+
+(defn get-name-from-annuaire-id [^String id]
+  (:nom (get @annuaire id)))
+
+(defn add-service-sup! []
+  (log/info "Adding service_sup...")
+  (doseq [[s_id s_data] (filter #(< 0 (count (:hierarchie (val %)))) @annuaire)]
+    (doseq [b (filter #(= (:type_hierarchie %) "Service Fils") (:hierarchie s_data))]
+      (swap! annuaire update-in [(:service b)]
+             conj
+             {:service_sup_id  s_id
+              :service_sup_nom (get-name-from-annuaire-id s_id)}))))
+
+(defn get-ancestor [service_sup_id]
+  (let [seen (atom #{})]
+    (loop [s_id service_sup_id]
+      (let [sup (:service_sup_id (get @annuaire s_id))]
+        (if (or (nil? sup)
+                (contains? @seen s_id)
+                (some #{s_id} @annuaire_tops))
+          s_id
+          (do (swap! seen conj s_id)
+              (recur sup)))))))
+
+(defn add-service-top! []
+  (doseq [[s_id s_data] (filter #(seq (:service_sup_id (val %))) @annuaire)]
+    (let [ancestor (get-ancestor (:service_sup_id s_data))]
+      (swap! annuaire
+             update-in
+             [s_id]
+             conj
+             {:service_top_id   ancestor
+              :service_top_name (get-name-from-annuaire-id ancestor)}))))
+
+(defn update-annuaire! []
+  (add-service-sup!)
+  (add-service-top!))
 
 (defn set-hosts! [& [opts]]
   (log/info "Fetching hosts from" (:hosts urls))
@@ -361,18 +409,23 @@
                            :ospo_url ospo_url
                            :forge forge)))))))
   ;; Add top_id and top_id_name to owners
-  (let [annuaire      (fetch-annuaire)
-        annuaire-tops (fetch-annuaire-tops)]
-    (doseq [[k v] (filter #(:pso_id (val %)) @owners)]
-      (let [pso_id      (:pso_id v)
-            top_id      (if (some #{pso_id} (into #{} (map name (keys annuaire-tops))))
-                          pso_id
-                          (:top (get annuaire pso_id)))
-            top_id_name (:nom (get annuaire top_id))]
-        (swap! owners update-in [k]
-               conj {:pso_top_id top_id :pso_top_id_name top_id_name})))))
+  (doseq [[k {:keys [pso_id]}] (filter #(:pso_id (val %)) @owners)]
+    (let [top_id      (if (some #{pso_id} @annuaire_tops)
+                        pso_id
+                        (:service_top_id (get @annuaire pso_id)))
+          top_id_name (:nom (get @annuaire top_id))]
+      (swap! owners update-in [k]
+             conj {:pso_top_id      top_id
+                   :pso_top_id_name top_id_name}))))
 
 ;;; Output functions
+
+(defn output-annuaire-sup []
+  (log/info "Output annuaire_sup.json...")
+  (spit "annuaire_sup.json"
+        (json/generate-string
+         (for [[k v] @annuaire] (conj (dissoc (into {} v) :hierarchie) {:id k}))
+         {:pretty true})))
 
 (defn output-awesome-json []
   (->> @awesome
@@ -522,7 +575,7 @@
 
 ;; Testing
 ;; (defn b-display-owners []
-;;   (b/gum :table :in (clojure.java.io/input-stream "owners.csv")))
+;;   (b/gum :table :in (clojure.java.io/input-stream "owners.csv" :height 10)))
 
 ;; Main execution
 (defn -main [args]
@@ -530,33 +583,39 @@
         (cli/parse-opts args {:spec cli-options})]
     (if (or (:help opts) (:h opts))
       (println (show-help))
-      (do (set-hosts! opts)
-          (set-owners!)
-          (when-not only-owners (set-repos!))
-          (set-public-sector-forges!)
-          (update-owners!)
-          (when-not only-owners
-            (set-awesome!)
-            (set-awesome-releases!)
-            (update-awesome!))
-          (output-owners-json)
-          (output-owners-json :extended)
-          (output-owners-csv)
-          (when-not only-owners 
-            (output-latest-sill-xml)
-            (output-latest-owners-xml)
-            (output-repositories-json)
-            (output-repositories-json :extended)
-            (output-repositories-csv)
-            (output-latest-repositories-xml)
-            (output-latest-releases-xml)
-            (output-forges-csv)
-            (output-stats-json)
-            (output-awesome-json)
-            (output-releases-json)
-            (log/info "Hosts:" (count @hosts))
-            (log/info "Owners:" (count @owners))
-            (log/info "Repositories:" (count @repositories))
-            (log/info "Forges:" (count @forges)))))))
+      (do
+        (set-annuaire!)
+        (update-annuaire!)
+        (set-hosts! opts)
+        (set-owners!)
+        (when-not only-owners (set-repos!))
+        (set-public-sector-forges!)
+        (update-owners!)
+        (when-not only-owners
+          (set-awesome!)
+          (set-awesome-releases!)
+          (update-awesome!))
+        (output-owners-json)
+        (output-owners-json :extended)
+        (output-owners-csv)
+        (when-not only-owners
+          (output-annuaire-sup)
+          (output-latest-sill-xml)
+          (output-latest-owners-xml)
+          (output-repositories-json)
+          (output-repositories-json :extended)
+          (output-repositories-csv)
+          (output-latest-repositories-xml)
+          (output-latest-releases-xml)
+          (output-forges-csv)
+          (output-stats-json)
+          (output-awesome-json)
+          (output-releases-json)
+          (log/info "Hosts:" (count @hosts))
+          (log/info "Owners:" (count @owners))
+          (log/info "Repositories:" (count @repositories))
+          (log/info "Forges:" (count @forges)))))))
 
 (-main *command-line-args*)
+
+
