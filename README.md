@@ -1,5 +1,5 @@
 [![img](https://img.shields.io/badge/code.gouv.fr-contributif-blue.svg)](https://code.gouv.fr/documentation/#/publier)
-[![Software License](https://img.shields.io/badge/Licence-EPL%2C%20Licence%20Ouverte-orange.svg)](https://git.sr.ht/~codegouvfr/codegouvfr-outils/tree/main/item/LICENSE.txt)
+[![Software License](https://img.shields.io/badge/Licence-EPL.svg)](https://git.sr.ht/~codegouvfr/codegouvfr-cli/tree/main/item/LICENSES/LICENSE.EPL-2.0.txt)
 
 # Presentation
 
@@ -13,9 +13,7 @@ This repository contains the `codegouvfr` script.
 
 # Installation
 
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/consolidate-datacodegouvfr.clj`
-
-## `sill-providers`
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/codegouvfr.clj`
 
 # [Contributing](CONTRIBUTING.md)
 
