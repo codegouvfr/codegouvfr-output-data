@@ -675,5 +675,3 @@
           (log/info "Forges:" (count @forges)))))))
 
 (-main *command-line-args*)
-
-
