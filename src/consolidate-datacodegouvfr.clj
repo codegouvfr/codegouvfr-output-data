@@ -43,6 +43,7 @@
 
 (def urls {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
            :sill                       "https://code.gouv.fr/sill/api/sill.json"
+           :formations                 "https://code.gouv.fr/data/formations-logiciels-libres.yml"
            :top_organizations          "https://code.gouv.fr/data/top_organizations.yml"
            :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"
            :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"})
@@ -573,6 +574,12 @@
          json/generate-string
          (spit "stats.json"))))
 
+(defn output-formations-json []
+  (when-let [res (fetch-yaml (:formations urls))]
+    (-> res
+        json/generate-string
+        (spit "formations-logiciels-libres.json"))))
+
 ;; Testing
 ;; (defn b-display-owners []
 ;;   (b/gum :table :in (clojure.java.io/input-stream "owners.csv" :height 10)))
@@ -611,6 +618,7 @@
           (output-stats-json)
           (output-awesome-json)
           (output-releases-json)
+          (output-formations-json)
           (log/info "Hosts:" (count @hosts))
           (log/info "Owners:" (count @owners))
           (log/info "Repositories:" (count @repositories))
