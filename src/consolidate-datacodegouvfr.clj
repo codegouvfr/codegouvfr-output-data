@@ -46,7 +46,9 @@
            :formations                 "https://code.gouv.fr/data/formations-logiciels-libres.yml"
            :top_organizations          "https://code.gouv.fr/data/top_organizations.yml"
            :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"
-           :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"})
+           :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"
+           :cnll-providers             "https://annuaire.cnll.fr/api/prestataires-sill.json"
+           :cdl-providers              "https://comptoir-du-libre.org/public/export/comptoir-du-libre_export_v1.json"})
 
 ;;; Helper functions
 
@@ -580,6 +582,52 @@
         json/generate-string
         (spit "formations-logiciels-libres.json"))))
 
+(defn output-sill-providers []
+  (let [cdl  (->> (fetch-json (:cdl-providers urls))
+                  :softwares
+                  (filter #(not-empty (:sill (:external_resources %))))
+                  (map (juxt #(:id (:sill (:external_resources %)))
+                             #(keep (juxt :name :url
+                                          (fn [a] (:website (:external_resources a))))
+                                    (:providers %))))
+                  (map (fn [[a b]]
+                         [a (into [] (map (fn [[x y z]]
+                                            {:nom x :cdl_url y :website z}) b))])))
+        cnll (->> (fetch-json (:cnll-providers urls))
+                  (map (juxt :sill_id
+                             #(map (fn [p] (set/rename-keys p {:url :cnll_url}))
+                                   (:prestataires %)))))]
+    (->> (group-by first (concat cdl cnll))
+         (map (fn [[id l]] [id (flatten (merge (map second l)))]))
+         (filter #(not-empty (second %)))
+         (map (fn [[id l]]
+                {:sill_id      id
+                 :prestataires (map #(apply merge (val %))
+                                    (group-by #(str/lower-case (:nom %)) l))}))
+         (sort-by :sill_id)
+         json/generate-string
+         (spit  "sill-prestataires.json"))))
+
+(defn output-sill-latest-xml []
+  (when-let [sill (fetch-json (:sill urls))]
+    (->> sill
+         (filter #(:referencedSinceTime %))
+         (sort-by #(java.util.Date. (:referencedSinceTime %)))
+         reverse
+         (take 10)
+         (map (fn [item]
+                (let [link (str "https://code.gouv.fr/sill/detail?name=" (:name item))]
+                  {:title       (str "Nouveau logiciel au SILL : " (:name item))
+                   :link        link
+                   :guid        link
+                   :description (:function item)
+                   :pubDate     (toInst (str (java.time.Instant/ofEpochMilli (:referencedSinceTime item))))})))
+         (rss/channel-xml
+          {:title       "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"
+           :link        "https://code.gouv.fr/data/latest-sill.xml"
+           :description "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"})
+         (spit "latest-sill.xml"))))
+
 ;; Testing
 ;; (defn b-display-owners []
 ;;   (b/gum :table :in (clojure.java.io/input-stream "owners.csv" :height 10)))
@@ -619,6 +667,8 @@
           (output-awesome-json)
           (output-releases-json)
           (output-formations-json)
+          (output-sill-providers)
+          (output-sill-latest-xml)
           (log/info "Hosts:" (count @hosts))
           (log/info "Owners:" (count @owners))
           (log/info "Repositories:" (count @repositories))
