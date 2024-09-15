@@ -338,7 +338,7 @@
 (defn update-owners! []
   (doseq [[f forge-data] @forges]
     (let [f (if (= f "github.com") "github" f)]
-      (if-let [groups (get forge-data "groups")]
+      (if-let [groups (get forge-data "owners")]
         (doseq [[group group-data] groups]
           (let [owner_url
                 (str/lower-case
