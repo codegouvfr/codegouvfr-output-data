@@ -430,8 +430,8 @@
   (log/info "Output annuaire_sup.json...")
   (spit "annuaire_sup.json"
         (json/generate-string
-         (for [[k v] @annuaire] (conj (dissoc (into {} v) :hierarchie) {:id k}))
-         {:pretty true})))
+         (for [[k v] @annuaire]
+           (conj (dissoc (into {} v) :hierarchie) {:id k})))))
 
 (defn output-awesome-json []
   (->> @awesome
