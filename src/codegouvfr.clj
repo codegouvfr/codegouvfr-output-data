@@ -672,7 +672,8 @@
   (log/info "Owners:" (count @owners))
   (when-not only-owners
     (log/info "Repositories:" (count @repositories))
-    (log/info "Awesome codegouvfr:" (count @awesome))))
+    (log/info "Awesome codegouvfr:" (count @awesome))
+    (log/info "Awesome releases:" (count @awesome-releases))))
 
 ;; Main execution
 (defn -main [args]
