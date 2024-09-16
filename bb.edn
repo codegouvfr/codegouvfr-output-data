@@ -1,6 +1,6 @@
 {:version        "0.5"
- :description    "Utilitaires pour code.gouv.fr"
- :url            "https://git.sr.ht/~codegouvfr/codegouvfr-outils"
+ :description    "Codegouvfr CLI"
+ :url            "https://git.sr.ht/~codegouvfr/codegouvfr-cli"
  :license        {:name "Eclipse Public License - v 2.0"
                   :url  "http://www.eclipse.org/legal/epl-v20.html"}
  :min-bb-version "0.4.0"
