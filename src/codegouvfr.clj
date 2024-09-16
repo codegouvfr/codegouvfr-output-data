@@ -477,23 +477,23 @@
          :description "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"})
        (spit "latest-sill.xml")))
 
-(defn output-latest-owners-xml []
-  (->> @owners
-       (filter #(:created_at (val %)))
-       (sort-by #(clojure.instant/read-instant-date (:created_at (val %))))
-       reverse
-       (take 10)
-       (map (fn [[o o-data]]
-              {:title       (str "Nouveau compte dans code.gouv.fr : " (:name o-data))
-               :link        (:html_url o-data)
-               :guid        o
-               :description (:description o-data)
-               :pubDate     (toInst (:created_at o-data))}))
-       (rss/channel-xml
-        {:title       "code.gouv.fr/sources - Nouveaux comptes d'organisation"
-         :link        "https://code.gouv.fr/data/latest-repositories.xml"
-         :description "code.gouv.fr/sources - Nouveaux comptes d'organisation"})
-       (spit "latest-owners.xml")))
+;; (defn output-latest-owners-xml []
+;;   (->> @owners
+;;        (filter #(:created_at (val %)))
+;;        (sort-by #(clojure.instant/read-instant-date (:created_at (val %))))
+;;        reverse
+;;        (take 10)
+;;        (map (fn [[o o-data]]
+;;               {:title       (str "Nouveau compte dans code.gouv.fr : " (:name o-data))
+;;                :link        (:html_url o-data)
+;;                :guid        o
+;;                :description (:description o-data)
+;;                :pubDate     (toInst (:created_at o-data))}))
+;;        (rss/channel-xml
+;;         {:title       "code.gouv.fr/sources - Nouveaux comptes d'organisation"
+;;          :link        "https://code.gouv.fr/data/latest-repositories.xml"
+;;          :description "code.gouv.fr/sources - Nouveaux comptes d'organisation"})
+;;        (spit "latest-owners.xml")))
 
 (defn output-latest-releases-xml []
   (->> @awesome-releases
@@ -653,7 +653,7 @@
   (when-not only-owners
     (output-annuaire-sup)
     (output-latest-sill-xml)
-    (output-latest-owners-xml)
+    ;; (output-latest-owners-xml)
     (output-repositories-json)
     (output-repositories-json :extended)
     (output-repositories-csv)
