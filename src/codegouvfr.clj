@@ -352,10 +352,10 @@
                            :forge forge)))))))
   ;; Add top_id and top_id_name to owners
   (doseq [[k {:keys [pso_id]}] (filter #(:pso_id (val %)) @owners)]
-    (let [top_id      (if (some #{pso_id} @annuaire_tops)
-                        pso_id
-                        (:service_top_id (get @annuaire pso_id)))
-          top_id_name (:nom (get @annuaire top_id))]
+    (let [pso_id_data (get @annuaire pso_id)
+          top_id      (or (some #{pso_id} @annuaire_tops)
+                          (:service_top_id pso_id_data))
+          top_id_name (:service_top_name pso_id_data)]
       (swap! owners update-in [k]
              conj {:pso_top_id      top_id
                    :pso_top_id_name top_id_name}))))
