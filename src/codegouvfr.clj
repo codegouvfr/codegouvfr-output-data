@@ -638,9 +638,9 @@
 (defn set-data! [{:keys [only-owners] :as opts}]
   (set-public-sector-forges!)
   (set-hosts! opts)
+  (set-annuaire!)
   (set-owners!)
   (when-not only-owners
-    (set-annuaire!)
     (set-repos!)
     (set-awesome!)
     (set-awesome-releases!)
