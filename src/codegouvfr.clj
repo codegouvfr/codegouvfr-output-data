@@ -298,8 +298,8 @@
              update-in
              [s_id]
              conj
-             {:service_top_id   ancestor
-              :service_top_name (get-name-from-annuaire-id ancestor)}))))
+             {:service_top_id  ancestor
+              :service_top_nom (get-name-from-annuaire-id ancestor)}))))
 
 (defn set-annuaire! []
   ;; First download annuaire.json
@@ -352,10 +352,9 @@
                            :forge forge)))))))
   ;; Add top_id and top_id_name to owners
   (doseq [[k {:keys [pso_id]}] (filter #(:pso_id (val %)) @owners)]
-    (let [pso_id_data (get @annuaire pso_id)
-          top_id      (or (some #{pso_id} @annuaire_tops)
-                          (:service_top_id pso_id_data))
-          top_id_name (:service_top_name pso_id_data)]
+    (let [top_id      (or (some #{pso_id} @annuaire_tops)
+                         (:service_top_id (get @annuaire pso_id)))
+          top_id_name (:nom (get @annuaire top_id))]
       (swap! owners update-in [k]
              conj {:pso_top_id      top_id
                    :pso_top_id_name top_id_name}))))
@@ -571,7 +570,8 @@
   (let [repositories_cnt (filter int? (map #(:repositories_count (val %)) @owners))]
     (->> {:repos_cnt         (str (count @repositories))
           :orgas_cnt         (str (count @owners))
-          :avg_repos_cnt     (format "%.2f" (/ (reduce + repositories_cnt) (* 1.0 (count repositories_cnt))))
+          :avg_repos_cnt     (when (int? repositories_cnt)
+                               (format "%.2f" (/ (reduce + repositories_cnt) (* 1.0 (count repositories_cnt)))))
           :top_orgs_by_stars (get-top-owners-by :total_stars)
           :top_orgs_by_repos (get-top-owners-by :repositories_count)
           :top_licenses      (get-top-x :license)
