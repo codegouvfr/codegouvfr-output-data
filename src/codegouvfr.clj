@@ -36,6 +36,7 @@
 
 ;;; Initialize variables
 
+(def short_desc_size 200)
 (def cli-opts (atom nil))
 (def annuaire (atom {}))
 (def annuaire_tops (atom {}))
@@ -59,6 +60,11 @@
 
 (defn is-s-exe-available? [^String s]
   (boolean (not-empty (:out (shell/sh "which" s)))))
+
+(defn shorten-string [^String s]
+  (if (> (count s) short_desc_size)
+    (str (subs s 0 short_desc_size) "…")
+    s))
 
 (defn replace-vals [m v r]
   (walk/postwalk #(if (= % v) r %) m))
@@ -122,35 +128,39 @@
    :r  :repositories_count
    :s  :followers})
 
-(defn owners-as-map [owners]
+(defn owners-as-map [owners & [full?]]
   (-> (for [[owner_id {:keys [description repositories_count html_url icon_url name
                               pso_top_id_name login followers created_at floss_policy
                               ospo_url website forge email location pso]}] owners]
-        {:a  location
-         :au icon_url
-         :c  created_at
-         :d  (if (not-empty description) (subs description 0 (min (count description) 200)) "")
-         :e  email
-         :f  floss_policy
-         :h  website
-         :id owner_id
-         :l  login
-         :m  pso_top_id_name
-         :n  name
-         :o  html_url
-         :os ospo_url
-         :p  forge
-         :ps pso
-         :r  repositories_count
-         :s  followers})
+        (let [short_desc (if (not-empty description) (shorten-string description))]
+          {:a  location
+           :au icon_url
+           :c  created_at
+           :d  (if full? description short_desc)
+           :e  email
+           :f  floss_policy
+           :h  website
+           :id owner_id
+           :l  login
+           :m  pso_top_id_name
+           :n  name
+           :o  html_url
+           :os ospo_url
+           :p  forge
+           :ps pso
+           :r  repositories_count
+           :s  (or followers 0)}))
       (replace-vals nil "")))
 
+(defn owners-to-map [& [full?]]
+  (-> @owners
+      filter-owners
+      (owners-as-map full?)))
+
 (defn owners-to-csv []
-  (as-> @owners o
-    (filter-owners o)
-    (owners-as-map o)
-    (map #(set/rename-keys % owners-keys-mapping) o)
-    (map-to-csv o)))
+  (->> (owners-to-map :full)
+       (map #(set/rename-keys % owners-keys-mapping))
+       map-to-csv))
 
 (defn compute-repository-awesome-score
   [{:keys [metadata template description fork forks_count
@@ -201,7 +211,7 @@
 (def repositories-keys-mapping
   {:a  :awesome-score
    :u  :updated_at
-   :d  :short_desc
+   :d  :description
    :f? :fork
    :t? :template
    :c? :contributing
@@ -214,18 +224,17 @@
    :p  :platform
    :o  :owner})
 
-(defn repositories-as-map [repositories]
+(defn repositories-as-map [repositories & [full?]]
   (-> (for [[_ {:keys [metadata owner_url description full_name
                        updated_at fork template language
                        license forks_count platform]
                 :as   repo_data}] repositories]
-        (let [short_desc (if (not-empty description)
-                           (subs description 0 (min (count description) 200)) "")
+        (let [short_desc (if (not-empty description) (shorten-string description))
               repo_name  (or (last (re-matches #".+/([^/]+)/?" full_name)) full_name)
               files      (:files metadata)]
           {:a  (compute-repository-awesome-score repo_data)
            :u  updated_at
-           :d  short_desc
+           :d  (if full? description short_desc)
            :f? fork
            :t? template
            :c? (false? (empty? (:contributing files)))
@@ -244,12 +253,15 @@
                    (str "https://" host "/" owner)))}))
       (replace-vals nil "")))
 
+(defn repositories-to-map [& [full?]]
+  (-> @repositories 
+      filter-repositories
+      (repositories-as-map full?)))
+
 (defn repositories-to-csv []
-  (as-> @repositories r
-    (filter-repositories r)
-    (repositories-as-map r)
-    (map #(set/rename-keys % repositories-keys-mapping) r)
-    (map-to-csv r)))
+  (->> (repositories-to-map :full)
+       (map #(set/rename-keys % repositories-keys-mapping))
+       map-to-csv))
 
 ;;; Fetching functions
 
@@ -375,7 +387,7 @@
 (defn set-owners! []
   ;; Set owners by fetching data
   (doseq [{:keys [owners_url]} @hosts]
-    (let [url (str owners_url "?per_page=1000")]
+    (let [url (str owners_url (str "?per_page=" (if (:test @cli-opts) "10" "1000")))]
       (when-let [data (fetch-json url)]
         (log/info "Fetching owners data from" url)
         (doseq [e (filter #(= (:kind %) "organization") data)]
@@ -388,7 +400,9 @@
 (defn set-repos! []
   (doseq [{:keys [repositories_url repositories_count url]} @hosts]
     (dotimes [n (int (clojure.math/floor (+ 1 (/ (- repositories_count 1) 1000))))]
-      (let [repos-url (str repositories_url (format "?page=%s&per_page=1000" (+ n 1)))
+      (let [repos-url (str repositories_url
+                           (format "?page=%s&per_page=%s"
+                                   (+ n 1) (if (:test @cli-opts) "10" "1000")))
             platform  (last (re-matches #"^https://([^/]+)/?$" (or url "")))]
         (when-let [data (try (fetch-json repos-url)
                              (catch Exception e
@@ -455,14 +469,12 @@
 (defn output-releases-json []
   (spit "releases.json" (json/generate-string @awesome-releases)))
 
-(defn output-owners-json [& [extended]]
-  (as-> @owners o
-    (filter-owners o)
-    (owners-as-map o)
+(defn output-owners-json [& [full?]]
+  (as-> (owners-to-map full?) o
     (mapv identity o)
-    (if-not extended o (map #(set/rename-keys % owners-keys-mapping) o))
+    (if-not full? o (map #(set/rename-keys % owners-keys-mapping) o))
     (json/generate-string o)
-    (spit (if extended "owners_full.json" "owners.json") o)))
+    (spit (if full? "owners_full.json" "owners.json") o)))
 
 (defn output-owners-csv []
   (with-open [file (io/writer "owners.csv")]
@@ -524,13 +536,11 @@
          :description "code.gouv.fr/sources - Nouvelles versions Awesome"})
        (spit "latest-releases.xml")))
 
-(defn output-repositories-json [& [extended]]
-  (as-> @repositories r
-    (filter-repositories r)
-    (repositories-as-map r)
-    (if-not extended r (map #(set/rename-keys % repositories-keys-mapping) r))
+(defn output-repositories-json [& [full]]
+  (as-> (repositories-to-map full) r
+    (if-not full r (map #(set/rename-keys % repositories-keys-mapping) r))
     (json/generate-string r)
-    (spit (if extended "repositories_full.json" "repositories.json") r)))
+    (spit (if full "repositories_full.json" "repositories.json") r)))
 
 (defn output-latest-repositories-xml []
   (->> @repositories
@@ -664,13 +674,13 @@
 
 (defn output-data! []
   (output-owners-json)
-  (output-owners-json :extended)
+  (output-owners-json :full)
   (output-owners-csv)
   (output-annuaire-sup)
   (output-latest-sill-xml)
   ;; (output-latest-owners-xml)
   (output-repositories-json)
-  (output-repositories-json :extended)
+  (output-repositories-json :full)
   (output-repositories-csv)
   (output-latest-repositories-xml)
   (output-latest-releases-xml)
