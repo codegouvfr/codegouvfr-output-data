@@ -23,12 +23,10 @@
 ;;; Define CLI options
 
 (def cli-options
-  {:help        {:alias :h
-                 :desc  "Display this help message"}
-   :test        {:alias :t
-                 :desc  "Run for testing purpose"}
-   :only-owners {:alias :o
-                 :desc  "Only fetch/export owners data"}})
+  {:help {:alias :h
+          :desc  "Display this help message"}
+   :test {:alias :t
+          :desc  "Run for testing purpose"}})
 
 (defn show-help
   []
@@ -332,7 +330,7 @@
   (log/info "Fetching hosts from" (:hosts urls))
   (let [res (or (fetch-json (:hosts urls)) ())]
     (reset! hosts
-            (if (or (:test opts) (:only-owners opts))
+            (if (:test opts)
               (take 2 (shuffle res))
               res))))
 
@@ -650,54 +648,50 @@
 ;;        :in (clojure.java.io/input-stream "https://git.sr.ht/~codegouvfr/codegouvfr-cli/blob/main/README.md")
 ;;        :height 20)
 
-(defn set-data! [{:keys [only-owners] :as opts}]
+(defn set-data! [opts]
   (set-public-sector-forges!)
   (set-hosts! opts)
   (set-annuaire!)
   (set-owners!)
-  (when-not only-owners
-    (set-repos!)
-    (set-awesome!)
-    (set-awesome-releases!)
-    (update-awesome!)))
+  (set-repos!)
+  (set-awesome!)
+  (set-awesome-releases!)
+  (update-awesome!))
 
-(defn output-data! [only-owners]
+(defn output-data! []
   (output-owners-json)
   (output-owners-json :extended)
   (output-owners-csv)
-  (when-not only-owners
-    (output-annuaire-sup)
-    (output-latest-sill-xml)
-    ;; (output-latest-owners-xml)
-    (output-repositories-json)
-    (output-repositories-json :extended)
-    (output-repositories-csv)
-    (output-latest-repositories-xml)
-    (output-latest-releases-xml)
-    (output-forges-csv)
-    (output-stats-json)
-    (output-awesome-json)
-    (output-releases-json)
-    (output-formations-json)
-    (output-sill-providers)
-    (output-sill-latest-xml)))
+  (output-annuaire-sup)
+  (output-latest-sill-xml)
+  ;; (output-latest-owners-xml)
+  (output-repositories-json)
+  (output-repositories-json :extended)
+  (output-repositories-csv)
+  (output-latest-repositories-xml)
+  (output-latest-releases-xml)
+  (output-forges-csv)
+  (output-stats-json)
+  (output-awesome-json)
+  (output-releases-json)
+  (output-formations-json)
+  (output-sill-providers)
+  (output-sill-latest-xml))
 
-(defn display-data! [only-owners]
+(defn display-data! []
   (log/info "Hosts:" (count @hosts))
   (log/info "Owners:" (count @owners))
-  (when-not only-owners
-    (log/info "Repositories:" (count @repositories))
-    (log/info "Awesome codegouvfr:" (count @awesome))
-    (log/info "Awesome releases:" (count @awesome-releases))))
+  (log/info "Repositories:" (count @repositories))
+  (log/info "Awesome codegouvfr:" (count @awesome))
+  (log/info "Awesome releases:" (count @awesome-releases)))
 
 ;; Main execution
 (defn -main [args]
-  (let [{:keys [only-owners] :as opts}
-        (cli/parse-opts args {:spec cli-options})]
+  (let [opts (cli/parse-opts args {:spec cli-options})]
     (if (or (:help opts) (:h opts))
       (println (show-help))
       (do (set-data! opts)
-          (output-data! only-owners)
-          (display-data! only-owners)))))
+          (output-data!)
+          (display-data!)))))
 
 (-main *command-line-args*)
