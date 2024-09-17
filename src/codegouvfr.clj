@@ -12,8 +12,13 @@
 (require '[clj-rss.core :as rss]
          '[clojure.tools.logging :as log]
          '[babashka.cli :as cli]
+         '[clojure.walk :as walk]
          ;; '[bblgum.core :as b]
+         ;; '[babashka.pods :as pods]
          )
+
+;; (pods/load-pod 'huahaiy/datalevin "0.9.10")
+;; (require '[pod.huahaiy.datalevin :as d])
 
 ;;; Define CLI options
 
@@ -52,6 +57,12 @@
            :cdl-providers              "https://comptoir-du-libre.org/public/export/comptoir-du-libre_export_v1.json"})
 
 ;;; Helper functions
+
+(defn is-s-exe-available? [^String s]
+  (boolean (not-empty (:out (shell/sh "which" s)))))
+
+(defn replace-vals [m v r]
+  (walk/postwalk #(if (= % v) r %) m))
 
 (defn toInst
   [^String s]
@@ -631,9 +642,13 @@
            :description "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"})
          (spit "latest-sill.xml"))))
 
-;; Testing
-;; (defn b-display-owners []
-;;   (b/gum :table :in (clojure.java.io/input-stream "owners.csv" :height 10)))
+;; Testing gum
+;;
+;; (b/gum :table :in (clojure.java.io/input-stream "owners.csv" :height 10))
+;; (b/gum :pager
+;;        :as :ignored
+;;        :in (clojure.java.io/input-stream "https://git.sr.ht/~codegouvfr/codegouvfr-cli/blob/main/README.md")
+;;        :height 20)
 
 (defn set-data! [{:keys [only-owners] :as opts}]
   (set-public-sector-forges!)
