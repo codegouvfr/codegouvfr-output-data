@@ -131,7 +131,7 @@
   (-> (for [[_ {:keys [description repositories_count html_url icon_url name
                        pso_top_id_name login followers created_at floss_policy
                        ospo_url website forge email location pso]}] owners]
-        (let [short_desc (if (not-empty description) (shorten-string description))]
+        (let [short_desc (when (not-empty description) (shorten-string description))]
           (conj {:a  location
                  :au icon_url
                  :c  created_at
@@ -148,7 +148,7 @@
                  :r  repositories_count
                  :s  (or followers 0)}
                 (when full? {:id html_url}))))
-      (replace-vals owners nil "")))
+      (replace-vals nil "")))
 
 (defn owners-to-map [& [full?]]
   (-> @owners
@@ -228,7 +228,7 @@
                        updated_at fork template language html_url
                        license forks_count platform]
                 :as   repo_data}] repositories]
-        (let [short_desc (if (not-empty description) (shorten-string description))
+        (let [short_desc (when (not-empty description) (shorten-string description))
               repo_name  (or (last (re-matches #".+/([^/]+)/?" full_name)) full_name)
               files      (:files metadata)]
           (conj {:a  (compute-repository-awesome-score repo_data)
