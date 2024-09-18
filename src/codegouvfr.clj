@@ -121,7 +121,6 @@
    :l  :login
    :m  :ministry
    :n  :name
-   :o  :html_url
    :os :ospo_url
    :p  :forge
    :ps :organization
@@ -133,23 +132,23 @@
                        pso_top_id_name login followers created_at floss_policy
                        ospo_url website forge email location pso]}] owners]
         (let [short_desc (if (not-empty description) (shorten-string description))]
-          {:a  location
-           :au icon_url
-           :c  created_at
-           :d  (if full? description short_desc)
-           :e  email
-           :f  floss_policy
-           :h  website
-           :l  login
-           :m  pso_top_id_name
-           :n  name
-           :id html_url
-           :os ospo_url
-           :p  forge
-           :ps pso
-           :r  repositories_count
-           :s  (or followers 0)}))
-      (replace-vals nil "")))
+          (conj {:a  location
+                 :au icon_url
+                 :c  created_at
+                 :d  (if full? description short_desc)
+                 :e  email
+                 :f  floss_policy
+                 :h  website
+                 :l  login
+                 :m  pso_top_id_name
+                 :n  name
+                 :os ospo_url
+                 :p  forge
+                 :ps pso
+                 :r  repositories_count
+                 :s  (or followers 0)}
+                (when full? {:id html_url}))))
+      (replace-vals owners nil "")))
 
 (defn owners-to-map [& [full?]]
   (-> @owners
@@ -232,26 +231,26 @@
         (let [short_desc (if (not-empty description) (shorten-string description))
               repo_name  (or (last (re-matches #".+/([^/]+)/?" full_name)) full_name)
               files      (:files metadata)]
-          {:a  (compute-repository-awesome-score repo_data)
-           :u  updated_at
-           :id html_url
-           :d  (if full? description short_desc)
-           :f? fork
-           :t? template
-           :c? (false? (empty? (:contributing files)))
-           :p? (false? (empty? (:publiccode files)))
-           :l  language
-           :li license
-           :fn full_name
-           :n  repo_name
-           :f  forks_count
-           :p  platform
-           :o  (when-let [[_ host owner]
-                          (re-matches
-                           (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
-                           owner_url)]
-                 (let [host (if (= host "GitHub") "github.com" host)]
-                   (str "https://" host "/" owner)))}))
+          (conj {:a  (compute-repository-awesome-score repo_data)
+                 :u  updated_at
+                 :d  (if full? description short_desc)
+                 :f? fork
+                 :t? template
+                 :c? (false? (empty? (:contributing files)))
+                 :p? (false? (empty? (:publiccode files)))
+                 :l  language
+                 :li license
+                 :fn full_name
+                 :n  repo_name
+                 :f  forks_count
+                 :p  platform
+                 :o  (when-let [[_ host owner]
+                                (re-matches
+                                 (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
+                                 owner_url)]
+                       (let [host (if (= host "GitHub") "github.com" host)]
+                         (str "https://" host "/" owner)))}
+                (when full? {:id html_url}))))
       (replace-vals nil "")))
 
 (defn repositories-to-map [& [full?]]
