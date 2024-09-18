@@ -129,9 +129,9 @@
    :s  :followers})
 
 (defn owners-as-map [owners & [full?]]
-  (-> (for [[owner_id {:keys [description repositories_count html_url icon_url name
-                              pso_top_id_name login followers created_at floss_policy
-                              ospo_url website forge email location pso]}] owners]
+  (-> (for [[_ {:keys [description repositories_count html_url icon_url name
+                       pso_top_id_name login followers created_at floss_policy
+                       ospo_url website forge email location pso]}] owners]
         (let [short_desc (if (not-empty description) (shorten-string description))]
           {:a  location
            :au icon_url
@@ -140,11 +140,10 @@
            :e  email
            :f  floss_policy
            :h  website
-           :id owner_id
            :l  login
            :m  pso_top_id_name
            :n  name
-           :o  html_url
+           :id html_url
            :os ospo_url
            :p  forge
            :ps pso
@@ -212,6 +211,7 @@
   {:a  :awesome-score
    :u  :updated_at
    :d  :description
+   :id :id
    :f? :fork
    :t? :template
    :c? :contributing
@@ -226,7 +226,7 @@
 
 (defn repositories-as-map [repositories & [full?]]
   (-> (for [[_ {:keys [metadata owner_url description full_name
-                       updated_at fork template language
+                       updated_at fork template language html_url
                        license forks_count platform]
                 :as   repo_data}] repositories]
         (let [short_desc (if (not-empty description) (shorten-string description))
@@ -234,6 +234,7 @@
               files      (:files metadata)]
           {:a  (compute-repository-awesome-score repo_data)
            :u  updated_at
+           :id html_url
            :d  (if full? description short_desc)
            :f? fork
            :t? template
