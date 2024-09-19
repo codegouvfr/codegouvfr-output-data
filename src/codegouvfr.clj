@@ -36,7 +36,7 @@
 
 ;;; Initialize variables
 
-(def short_desc_size 200)
+(def short_desc_size 120)
 (def cli-opts (atom nil))
 (def annuaire (atom {}))
 (def annuaire_tops (atom {}))
@@ -131,23 +131,22 @@
   (-> (for [[_ {:keys [description repositories_count html_url icon_url name
                        pso_top_id_name login followers created_at floss_policy
                        ospo_url website forge email location pso]}] owners]
-        (let [short_desc (when (not-empty description) (shorten-string description))]
-          {:a  location
-           :au icon_url
-           :c  created_at
-           :d  (if full? description short_desc)
-           :e  email
-           :f  floss_policy
-           :h  website
-           :id html_url
-           :l  login
-           :m  pso_top_id_name
-           :n  name
-           :os ospo_url
-           :p  forge
-           :ps pso
-           :r  repositories_count
-           :s  (or followers 0)}))
+        (conj
+         (let [short_desc (when (not-empty description) (shorten-string description))]
+           {
+            :au icon_url
+            :d  (if full? description short_desc)
+            :f  floss_policy
+            :h  website
+            :id html_url
+            :l  login
+            :m  pso_top_id_name
+            :n  name
+            :os ospo_url
+            :ps pso
+            :r  repositories_count
+            :s  (or followers 0)})
+         (when full? {:a location :e email :c created_at :p forge})))
       (replace-vals nil "")))
 
 (defn owners-to-map [& [full?]]
@@ -231,26 +230,27 @@
         (let [short_desc (when (not-empty description) (shorten-string description))
               repo_name  (or (last (re-matches #".+/([^/]+)/?" full_name)) full_name)
               files      (:files metadata)]
-          {:a  (compute-repository-awesome-score repo_data)
-           :c? (false? (empty? (:contributing files)))
-           :d  (if full? description short_desc)
-           :f  forks_count
-           :fn full_name
-           :f? fork
-           :id html_url
-           :l  language
-           :li license
-           :n  repo_name
-           :o  (when-let [[_ host owner]
-                          (re-matches
-                           (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
-                           owner_url)]
-                 (let [host (if (= host "GitHub") "github.com" host)]
-                   (str "https://" host "/" owner)))
-           :p  platform
-           :p? (false? (empty? (:publiccode files)))
-           :t? template
-           :u  updated_at}))
+          (conj
+           {:a  (compute-repository-awesome-score repo_data)
+            :c? (false? (empty? (:contributing files)))
+            :d  (if full? description short_desc)
+            :f  forks_count
+            :fn full_name
+            :f? fork
+            :l  language
+            :li license
+            :n  repo_name
+            :o  (when-let [[_ host owner]
+                           (re-matches
+                            (re-pattern (str (:hosts urls) "/([^/]+)/owners/([^/]+)"))
+                            owner_url)]
+                  (let [host (if (= host "GitHub") "github.com" host)]
+                    (str "https://" host "/" owner)))
+            :p  platform
+            :p? (false? (empty? (:publiccode files)))
+            :t? template
+            :u  updated_at}
+           (when full? {:id html_url}))))
       (replace-vals nil "")))
 
 (defn repositories-to-map [& [full?]]
@@ -343,7 +343,7 @@
 
 (defn set-hosts! []
   (log/info "Fetching hosts from" (:hosts urls))
-  (let [res (or (fetch-json (:hosts urls)) ())]
+  (when-let [res (fetch-json (:hosts urls))]
     (reset! hosts
             (if-let [test-opt (:test @cli-opts)]
               (take (if (int? test-opt) test-opt 2)
@@ -590,17 +590,22 @@
          (take 10))))
 
 (defn output-stats-json []
-  (let [repositories_cnt (filter int? (map #(:repositories_count (val %)) @owners))]
-    (->> {:repos_cnt         (str (count @repositories))
-          :orgas_cnt         (str (count @owners))
-          :avg_repos_cnt     (when (int? repositories_cnt)
-                               (format "%.2f" (/ (reduce + repositories_cnt) (* 1.0 (count repositories_cnt)))))
-          :top_orgs_by_stars (get-top-owners-by :total_stars)
-          :top_orgs_by_repos (get-top-owners-by :repositories_count)
-          :top_licenses      (get-top-x :license)
-          :top_languages     (get-top-x :language)}
-         json/generate-string
-         (spit "stats.json"))))
+  (let [repositories_cnt (filter int? (map #(:repositories_count (val %)) @owners))
+        stats            {:repos_cnt         (str (count @repositories))
+                          :orgas_cnt         (str (count @owners))
+                          :avg_repos_cnt     (when (int? repositories_cnt)
+                                               (format "%.2f" (/ (reduce + repositories_cnt)
+                                                                 (* 1.0 (count repositories_cnt)))))
+                          :top_orgs_by_stars (get-top-owners-by :total_stars)
+                          :top_orgs_by_repos (get-top-owners-by :repositories_count)
+                          :top_licenses      (get-top-x :license)
+                          :top_languages     (get-top-x :language)}
+        stats-str        (json/generate-string stats)]
+    (spit (-> "yyyy-MM-dd"
+              java.text.SimpleDateFormat.
+              (.format (java.util.Date.))
+              (str "-stats.json")) stats-str)
+    (spit "stats.json" stats-str)))
 
 (defn output-formations-json []
   (when-let [res (fetch-yaml (:formations urls))]
