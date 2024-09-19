@@ -133,8 +133,7 @@
                        ospo_url website forge email location pso]}] owners]
         (conj
          (let [short_desc (when (not-empty description) (shorten-string description))]
-           {
-            :au icon_url
+           {:au icon_url
             :d  (if full? description short_desc)
             :f  floss_policy
             :h  website
@@ -474,14 +473,14 @@
     (mapv identity o)
     (if-not full? o (map #(set/rename-keys % owners-keys-mapping) o))
     (json/generate-string o)
-    (spit (if full? "owners_full.json" "owners.json") o)))
+    (spit (if full? "codegouvfr-organizations.json" "owners.json") o)))
 
 (defn output-owners-csv []
-  (with-open [file (io/writer "owners.csv")]
+  (with-open [file (io/writer "codegouvfr-organizations.csv")]
     (csv/write-csv file (owners-to-csv))))
 
 (defn output-repositories-csv []
-  (with-open [file (io/writer "repositories.csv")]
+  (with-open [file (io/writer "codegouvfr--repositories.csv")]
     (csv/write-csv file (repositories-to-csv))))
 
 (defn output-latest-sill-xml []
@@ -540,7 +539,7 @@
   (as-> (repositories-to-map full) r
     (if-not full r (map #(set/rename-keys % repositories-keys-mapping) r))
     (json/generate-string r)
-    (spit (if full "repositories_full.json" "repositories.json") r)))
+    (spit (if full "codegouvfr-repositories.json" "repos.json") r)))
 
 (defn output-latest-repositories-xml []
   (->> @repositories
@@ -563,10 +562,10 @@
        (spit "latest-repositories.xml")))
 
 (defn output-forges-csv []
-  (shell/sh "rm" "-f" "forges.csv")
+  (shell/sh "rm" "-f" "codegouvfr-forges.csv")
   (doseq [{:keys [name kind]} @hosts]
     (let [n (if (= "GitHub" name) "github.com" name)]
-      (spit "forges.csv" (str n "," kind "\n") :append true))))
+      (spit "codegouvfr-forges.csv" (str n "," kind "\n") :append true))))
 
 (defn get-top-owners-by [k]
   (->> @owners
