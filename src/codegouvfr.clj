@@ -40,6 +40,7 @@
 (def cli-opts (atom nil))
 (def annuaire (atom {}))
 (def annuaire_tops (atom {}))
+(def hosts-data-available? (atom false))
 (def hosts (atom ()))
 (def forges (atom ()))
 (def owners (atom {}))
@@ -343,6 +344,7 @@
 (defn set-hosts! []
   (log/info "Fetching hosts from" (:hosts urls))
   (when-let [res (fetch-json (:hosts urls))]
+    (reset! hosts-data-available? true)
     (reset! hosts
             (if-let [test-opt (:test @cli-opts)]
               (take (if (int? test-opt) test-opt 2)
@@ -669,12 +671,13 @@
 (defn set-data! []
   (set-public-sector-forges!)
   (set-hosts!)
-  (set-annuaire!)
-  (set-owners!)
-  (set-repos!)
-  (set-awesome!)
-  (set-awesome-releases!)
-  (update-awesome!))
+  (when @hosts-data-available?
+    (set-annuaire!)
+    (set-owners!)
+    (set-repos!)
+    (set-awesome!)
+    (set-awesome-releases!)
+    (update-awesome!)))
 
 (defn output-data! []
   (output-owners-json)
@@ -710,7 +713,9 @@
     (if (or (:help opts) (:h opts))
       (println (show-help))
       (do (set-data!)
-          (output-data!)
-          (display-data!)))))
+          (if-not @hosts-data-available?
+            (println "Hosts data could not be fetched")
+            (do (output-data!)
+                (display-data!)))))))
 
 (-main *command-line-args*)
