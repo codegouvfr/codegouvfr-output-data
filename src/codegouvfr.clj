@@ -539,7 +539,7 @@
   (as-> (repositories-to-map full) r
     (if-not full r (map #(set/rename-keys % repositories-keys-mapping) r))
     (json/generate-string r)
-    (spit (if full "codegouvfr-repositories.json" "repos.json") r)))
+    (spit (if full "codegouvfr-repositories.json" "repos_preprod.json") r)))
 
 (defn output-latest-repositories-xml []
   (->> @repositories
