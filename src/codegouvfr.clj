@@ -420,7 +420,7 @@
     (reset! forges res)))
 
 (defn set-awesome! []
-  (log/info "Fetching public sector forges from comptes-organismes-pubics.yml")
+  (log/info "Set awesome projects from awesome-codegouvfr.yml")
   (when-let [res (fetch-yaml (:awesome-codegouvfr urls))]
     (reset! awesome res)))
 
