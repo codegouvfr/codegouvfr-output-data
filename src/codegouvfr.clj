@@ -6,6 +6,7 @@
 
 (deps/add-deps '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
 (deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.8.60"}}})
+(deps/add-deps '{:deps {org.babashka/http-client {:mvn/version "0.3.11"}}})
 ;; (deps/add-deps '{:deps {io.github.lispyclouds/bblgum
 ;;                         {:git/sha "b1b939ae5ae522a55499a8260b450e8898f77781"}}})
 
@@ -13,6 +14,7 @@
          '[clojure.tools.logging :as log]
          '[babashka.cli :as cli]
          '[clojure.walk :as walk]
+         '[babashka.http-client :as http]
          ;; '[bblgum.core :as b]
          ;; '[babashka.pods :as pods]
          )
@@ -266,23 +268,23 @@
 ;;; Fetching functions
 
 (defn fetch-json [url]
-  (let [res (try (curl/get url)
-                 (catch Exception _
-                   (log/error "Failed to fetch JSON from" url)))]
-    (when (= (:status res) 200)
-      (json/parse-string (:body res) true))))
+  (when-let [res (try (http/get url {:async true})
+                      (catch Exception _
+                        (log/error "Failed to fetch JSON from" url)))]
+    (when (= (:status @res) 200)
+      (json/parse-string (:body @res) true))))
 
 (defn fetch-yaml [url]
-  (let [res (try (curl/get url)
-                 (catch Exception _
-                   (log/error "Failed to fetch YAML from" url)))]
-    (when (= (:status res) 200)
-      (yaml/parse-string (:body res) :keywords false))))
+  (when-let [res (try (http/get url {:async true})
+                      (catch Exception _
+                        (log/error "Failed to fetch YAML from" url)))]
+    (when (= (:status @res) 200)
+      (yaml/parse-string (:body @res) :keywords false))))
 
 (defn fetch-annuaire-zip []
   (log/info "Fetching annuaire as a zip file from data.gouv.fr...")
   (let [annuaire-zip-url "https://www.data.gouv.fr/fr/datasets/r/d0158eb2-6772-49c2-afb1-732e573ba1e5"
-        stream           (-> (curl/get annuaire-zip-url {:as :bytes})
+        stream           (-> (http/get annuaire-zip-url {:as :bytes})
                              :body
                              (io/input-stream)
                              (java.util.zip.ZipInputStream.))]
