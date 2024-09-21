@@ -359,10 +359,10 @@
           (let [owner_url
                 (str/lower-case
                  (format (str (:hosts urls) "/%s/owners/%s") f group))
-                {:strs [pso pso_id floss_policy ospo_url]} group-data]
+                {:strs [pso_id floss_policy ospo_url]} group-data]
             (swap! owners update-in [owner_url]
                    #(assoc %
-                           :pso pso
+                           :pso (get-name-from-annuaire-id pso_id)
                            :pso_id pso_id
                            :floss_policy floss_policy
                            :ospo_url ospo_url
