@@ -267,8 +267,8 @@
 
 ;;; Fetching functions
 
-(defn fetch-json [url]
-  (when-let [res (try (http/get url {:async true})
+(defn fetch-json [url & [query-params]]
+  (when-let [res (try (http/get url {:async true :query-params query-params})
                       (catch Exception _
                         (log/error "Failed to fetch JSON from" url)))]
     (when (= (:status @res) 200)
@@ -390,27 +390,23 @@
 (defn set-owners! []
   ;; Set owners by fetching data
   (doseq [{:keys [owners_url]} @hosts]
-    (let [url (str owners_url (str "?per_page=" (if (:test @cli-opts) "10" "1000")))]
-      (when-let [data (fetch-json url)]
-        (log/info "Fetching owners data from" url)
-        (doseq [e (filter #(= (:kind %) "organization") data)]
-          (swap! owners assoc
-                 (str/lower-case (:owner_url e))
-                 (dissoc e :owner_url))))))
+    (when-let [data (fetch-json owners_url {:per_page (if (:test @cli-opts) "10" "1000")})]
+      (log/info "Fetching owners data from" owners_url)
+      (doseq [e (filter #(= (:kind %) "organization") data)]
+        (swap! owners assoc
+               (str/lower-case (:owner_url e))
+               (dissoc e :owner_url)))))
   ;; Update owners by using forge data
   (update-owners!))
 
 (defn set-repos! []
   (doseq [{:keys [repositories_url repositories_count url]} @hosts]
     (dotimes [n (int (clojure.math/floor (+ 1 (/ (- repositories_count 1) 1000))))]
-      (let [repos-url (str repositories_url
-                           (format "?page=%s&per_page=%s"
-                                   (+ n 1) (if (:test @cli-opts) "10" "1000")))
-            platform  (last (re-matches #"^https://([^/]+)/?$" (or url "")))]
-        (when-let [data (try (fetch-json repos-url)
-                             (catch Exception e
-                               (log/error "Error fetching repos from" (.getMessage e))))]
-          (log/info "Fetching repos data from" repos-url)
+      (let [platform (last (re-matches #"^https://([^/]+)/?$" (or url "")))]
+        (when-let [data (fetch-json repositories_url
+                                    {:page     (+ n 1)
+                                     :per_page (if (:test @cli-opts) "10" "1000")})]
+          (log/info "Fetching repos data from" repositories_url)
           (doseq [e data]
             (swap! repositories assoc
                    (str/lower-case (:repository_url e))
