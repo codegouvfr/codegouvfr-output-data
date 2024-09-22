@@ -46,6 +46,7 @@
 (def forges (atom ()))
 (def owners (atom {}))
 (def repositories (atom {}))
+(def awesome-data (atom nil))
 (def awesome (atom {}))
 (def awesome-releases (atom {}))
 
@@ -407,8 +408,7 @@
     (doseq [o (filter #(= (:kind %) "organization") data)]
       (swap! owners assoc
              (str/lower-case (:owner_url o))
-             (dissoc o :owner_url))))
-  (update-owners!))
+             (dissoc o :owner_url)))))
 
 (defn query-pages-count [^Integer repos-count]
   (int (clojure.math/floor (+ 1 (/ (- repos-count 1) 1000)))))
@@ -439,13 +439,16 @@
     (reset! forges res)))
 
 (defn set-awesome! []
-  (let [awes (atom (fetch-yaml (:awesome-codegouvfr urls)))
-        data (get-urls-yaml (map publiccode-url (keys @awes)))]
-    (doseq [p data]
-      (let [repo_url (str/lower-case (get p "url"))]
-        (swap! awesome assoc repo_url
-               (conj p {"releases_url" (:releases_url
-                                        (get-repo-properties repo_url))}))))))
+  (let [awes (fetch-yaml (:awesome-codegouvfr urls))]
+    (reset! awesome-data
+            (get-urls-yaml (map publiccode-url (keys awes))))))
+
+(defn update-awesome! []
+  (doseq [p @awesome-data]
+    (let [repo_url (str/lower-case (get p "url"))]
+      (swap! awesome assoc repo_url
+             (conj p {"releases_url" (:releases_url
+                                      (get-repo-properties repo_url))})))))
 
 (defn set-awesome-releases! []
   (let [data (->> @awesome
@@ -524,6 +527,7 @@
 ;;          :description "code.gouv.fr/sources - Nouveaux comptes d'organisation"})
 ;;        (spit "latest-owners.xml")))
 
+;; FIXME
 (defn output-latest-releases-xml []
   (->> @awesome-releases
        (sort-by #(clojure.instant/read-instant-date (:published_at %)))
@@ -673,13 +677,18 @@
 ;;        :height 20)
 
 (defn set-data! []
-  (set-public-sector-forges!)
-  (set-hosts!)
-  (set-annuaire!)
-  (set-owners!)
-  (set-repos!)
-  (set-awesome!)
-  (set-awesome-releases!))
+  (let [hosts-future    (future (set-hosts!))
+        forges-future   (future (set-public-sector-forges!))
+        annuaire-future (future (set-annuaire!))]
+    @hosts-future
+    @forges-future
+    @annuaire-future
+    (set-owners!)
+    (update-owners!)
+    (set-repos!)
+    (set-awesome!)
+    (update-awesome!)
+    (set-awesome-releases!)))
 
 (defn output-data! []
   (output-owners-json)
