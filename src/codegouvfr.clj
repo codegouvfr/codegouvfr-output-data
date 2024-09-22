@@ -455,7 +455,9 @@
                   (map #(str (get (val %) "releases_url") "?per_page=3"))
                   (filter #(re-matches #"^https://.*" %))
                   get-urls-json
-                  (map #(select-keys % [:url :html_url :tag_name :body :published_at]))
+                  (map #(select-keys % [:url :uuid :name :html_url :tag_name :body :published_at]))
+                  (map #(assoc % :repo_name
+                               (last (re-matches #"https://[^/]+/([^/]+/[^/]+).*" (:html_url %)))))
                   (map #(update-in % [:body] (fn [s] (shorten-string s)))))]
     (doseq [[k v] @awesome]
       (let [rels (filter #(str/includes? (str/lower-case (:html_url %)) k) data)]
@@ -509,27 +511,11 @@
          :description "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"})
        (spit "latest-sill.xml")))
 
-;; (defn output-latest-owners-xml []
-;;   (->> @owners
-;;        (filter #(:created_at (val %)))
-;;        (sort-by #(clojure.instant/read-instant-date (:created_at (val %))))
-;;        reverse
-;;        (take 10)
-;;        (map (fn [[o o-data]]
-;;               {:title       (str "Nouveau compte dans code.gouv.fr : " (:name o-data))
-;;                :link        (:html_url o-data)
-;;                :guid        o
-;;                :description (:description o-data)
-;;                :pubDate     (toInst (:created_at o-data))}))
-;;        (rss/channel-xml
-;;         {:title       "code.gouv.fr/sources - Nouveaux comptes d'organisation"
-;;          :link        "https://code.gouv.fr/data/latest-repositories.xml"
-;;          :description "code.gouv.fr/sources - Nouveaux comptes d'organisation"})
-;;        (spit "latest-owners.xml")))
-
-;; FIXME
 (defn output-latest-releases-xml []
-  (->> @awesome-releases
+  (->> @awesome
+       vals
+       (map #(get % "releases"))
+       flatten
        (sort-by #(clojure.instant/read-instant-date (:published_at %)))
        reverse
        (take 10)
@@ -696,7 +682,6 @@
   (output-owners-csv)
   (output-annuaire-sup)
   (output-latest-sill-xml)
-  ;; (output-latest-owners-xml)
   (output-repositories-json)
   (output-repositories-json :full)
   (output-repositories-csv)
