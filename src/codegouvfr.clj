@@ -417,7 +417,7 @@
 (defn query-pages-count [^Integer repos-count]
   (int (clojure.math/floor (+ 1 (/ (- repos-count 1) 1000)))))
 
-(defn hosts-data-to-query-urls [data]
+(defn hosts-to-query-urls [data]
   (->> data
        (sequence
         (comp
@@ -429,8 +429,7 @@
        flatten))
 
 (defn set-repos! []
-  (let [data (get-urls-json (hosts-data-to-query-urls @hosts)
-                            "Fetching repositories data...")]
+  (let [data (get-urls-json (hosts-to-query-urls @hosts) "Fetching repositories data...")]
     (doseq [r data]
       (swap! repositories assoc
              (str/lower-case (:repository_url r))
