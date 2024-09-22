@@ -47,7 +47,7 @@
 (def forges (atom ()))
 (def owners (atom {}))
 (def repositories (atom {}))
-(def awesome (atom ()))
+(def awesome (atom {}))
 (def awesome-releases (atom ()))
 
 (def urls {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
@@ -89,15 +89,15 @@
        first
        second))
 
-(defn prefix-raw-file [^String awesome-repo]
-  (when (not-empty awesome-repo)
-    (let [{:keys [html_url full_name default_branch platform]}
-          (get-repo-properties awesome-repo)]
-      (condp = platform
-        "github.com" (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
-        "gitlab.com" (format "%s/-/raw/%s/" html_url default_branch)
-        "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
-        (format "%s/-/raw/%s/" html_url default_branch)))))
+(defn publiccode-url [^String awesome-repo]
+  (let [{:keys [html_url full_name default_branch platform]}
+        (get-repo-properties awesome-repo)
+        prefix-url
+        (condp = platform
+          "github.com" (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
+          "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
+          (format "%s/-/raw/%s/" html_url default_branch))]
+    (str prefix-url "publiccode.yml")))
 
 (defn filter-owners [owners]
   (->> owners
@@ -267,19 +267,38 @@
 
 ;;; Fetching functions
 
-(defn fetch-json [url & [query-params]]
-  (when-let [res (try (http/get url {:async true :query-params query-params})
-                      (catch Exception _
-                        (log/error "Failed to fetch JSON from" url)))]
-    (when (= (:status @res) 200)
-      (json/parse-string (:body @res) true))))
+(defn get-url [url]
+  (try (http/get url)
+       (catch Exception _
+         (log/error "Failed to fetch" url))))
+
+(defn get-urls [urls]
+  (try (let [data (doall (map #(http/get % {:async true}) urls))]
+         (doall (map (comp :body deref) data)))
+       (catch Exception _
+         (log/error "Failed to fetch urls"))))
+
+(defn get-urls-json [urls & [info]]
+  (when info (log/info info))
+  (when-let [data (get-urls urls)]
+    (flatten (map #(json/parse-string % true) data))))
+
+(defn get-urls-yaml [urls & [info]]
+  (when info (log/info info))
+  (when-let [data (get-urls urls)]
+    (flatten (map #(yaml/parse-string % :keywords false) data))))
 
 (defn fetch-yaml [url]
-  (when-let [res (try (http/get url {:async true})
-                      (catch Exception _
-                        (log/error "Failed to fetch YAML from" url)))]
-    (when (= (:status @res) 200)
-      (yaml/parse-string (:body @res) :keywords false))))
+  (log/info "Fetching yaml data from" url)
+  (when-let [res (get-url url)]
+    (when (= (:status res) 200)
+      (yaml/parse-string (:body res) :keywords false))))
+
+(defn fetch-json [url]
+  (log/info "Fetching json data from" url)
+  (when-let [res (get-url url)]
+    (when (= (:status res) 200)
+      (json/parse-string (:body res) true))))
 
 (defn fetch-annuaire-zip []
   (log/info "Fetching annuaire as a zip file from data.gouv.fr...")
@@ -344,7 +363,6 @@
   (add-service-top!))
 
 (defn set-hosts! []
-  (log/info "Fetching hosts from" (:hosts urls))
   (when-let [res (fetch-json (:hosts urls))]
     (reset! hosts-data-available? true)
     (reset! hosts
@@ -389,49 +407,47 @@
 
 (defn set-owners! []
   ;; Set owners by fetching data
-  (doseq [{:keys [owners_url]} @hosts]
-    (when-let [data (fetch-json owners_url {:per_page (if (:test @cli-opts) "10" "1000")})]
-      (log/info "Fetching owners data from" owners_url)
-      (doseq [e (filter #(= (:kind %) "organization") data)]
-        (swap! owners assoc
-               (str/lower-case (:owner_url e))
-               (dissoc e :owner_url)))))
-  ;; Update owners by using forge data
+  (let [data (get-urls-json (map :owners_url @hosts) "Fetching owners data...")]
+    (doseq [o (filter #(= (:kind %) "organization") data)]
+      (swap! owners assoc
+             (str/lower-case (:owner_url o))
+             (dissoc o :owner_url))))
   (update-owners!))
 
+(defn query-pages-count [^Integer repos-count]
+  (int (clojure.math/floor (+ 1 (/ (- repos-count 1) 1000)))))
+
+(defn hosts-data-to-query-urls [data]
+  (->> data
+       (sequence
+        (comp
+         (map #(select-keys % [:repositories_url :repositories_count :url]))
+         (map #(for [n (range (query-pages-count (:repositories_count %)))]
+                 (str (:repositories_url %)
+                      "?page=" (+ n 1)
+                      "&per_page=" (if (:test @cli-opts) "10" "1000"))))))
+       flatten))
+
 (defn set-repos! []
-  (doseq [{:keys [repositories_url repositories_count url]} @hosts]
-    (dotimes [n (int (clojure.math/floor (+ 1 (/ (- repositories_count 1) 1000))))]
-      (let [platform (last (re-matches #"^https://([^/]+)/?$" (or url "")))]
-        (when-let [data (fetch-json repositories_url
-                                    {:page     (+ n 1)
-                                     :per_page (if (:test @cli-opts) "10" "1000")})]
-          (log/info "Fetching repos data from" repositories_url)
-          (doseq [e data]
-            (swap! repositories assoc
-                   (str/lower-case (:repository_url e))
-                   (-> e
-                       (assoc :platform platform)
-                       (dissoc :repository_url)))))))))
+  (let [data (get-urls-json (hosts-data-to-query-urls @hosts)
+                            "Fetching repositories data...")]
+    (doseq [r data]
+      (swap! repositories assoc
+             (str/lower-case (:repository_url r))
+             (-> r
+                 (assoc :platform
+                        (last (re-matches #"^https://([^/]+).*$" (or (:html_url r) ""))))
+                 (dissoc :repository_url))))))
 
 (defn set-public-sector-forges! []
-  (log/info "Fetching public sector forges from comptes-organismes-publics.yml")
   (when-let [res (fetch-yaml (:comptes-organismes-publics urls))]
     (reset! forges res)))
 
 (defn set-awesome! []
-  (log/info "Set awesome projects from awesome-codegouvfr.yml")
-  (when-let [res (fetch-yaml (:awesome-codegouvfr urls))]
-    (reset! awesome res)))
-
-(defn update-awesome! []
-  (as-> @awesome a
-    (for [[k v] a]
-      (when-let [pfx (not-empty (prefix-raw-file (str/lower-case k)))]
-        (if-let [res (fetch-yaml (str pfx "publiccode.yml"))]
-          [k (conj v res)]
-          [k v])))
-    (reset! awesome a)))
+  (let [awes (atom (fetch-yaml (:awesome-codegouvfr urls)))
+        data (get-urls-yaml (map publiccode-url (keys @awes)))]
+    (doseq [p data]
+      (swap! awesome assoc (str/lower-case (get p "url")) p))))
 
 (defn set-awesome-releases! []
   (->> @awesome
@@ -480,7 +496,7 @@
     (csv/write-csv file (owners-to-csv))))
 
 (defn output-repositories-csv []
-  (with-open [file (io/writer "codegouvfr--repositories.csv")]
+  (with-open [file (io/writer "codegouvfr-repositories.csv")]
     (csv/write-csv file (repositories-to-csv))))
 
 (defn output-latest-sill-xml []
@@ -674,8 +690,7 @@
     (set-owners!)
     (set-repos!)
     (set-awesome!)
-    (set-awesome-releases!)
-    (update-awesome!)))
+    (set-awesome-releases!)))
 
 (defn output-data! []
   (output-owners-json)
