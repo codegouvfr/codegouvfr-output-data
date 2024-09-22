@@ -48,7 +48,7 @@
 (def owners (atom {}))
 (def repositories (atom {}))
 (def awesome (atom {}))
-(def awesome-releases (atom ()))
+(def awesome-releases (atom {}))
 
 (def urls {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
            :sill                       "https://code.gouv.fr/sill/api/sill.json"
@@ -273,10 +273,8 @@
          (log/error "Failed to fetch" url))))
 
 (defn get-urls [urls]
-  (try (let [data (doall (map #(http/get % {:async true}) urls))]
-         (doall (map (comp :body deref) data)))
-       (catch Exception _
-         (log/error "Failed to fetch urls"))))
+  (when-let [data (doall (map #(http/get % {:async true :throw false}) urls))]
+    (doall (map (comp :body deref) data))))
 
 (defn get-urls-json [urls & [info]]
   (when info (log/info info))
@@ -446,23 +444,21 @@
   (let [awes (atom (fetch-yaml (:awesome-codegouvfr urls)))
         data (get-urls-yaml (map publiccode-url (keys @awes)))]
     (doseq [p data]
-      (swap! awesome assoc (str/lower-case (get p "url")) p))))
+      (let [repo_url (str/lower-case (get p "url"))]
+        (swap! awesome assoc repo_url
+               (conj p {"releases_url" (:releases_url
+                                        (get-repo-properties repo_url))}))))))
 
 (defn set-awesome-releases! []
-  (->> @awesome
-       (into {})
-       (map #(take 3
-                   (let [r        (key %)
-                         m        (re-matches #".+/([^/]+)/([^/]+)/?" r)
-                         r_name   (last m)
-                         r_o_name (second m)]
-                     (map
-                      (fn [r] (assoc r :repo_name (str r_name " (" r_o_name ")")))
-                      (when-let [rel_url (:releases_url (get-repo-properties r))]
-                        (fetch-json rel_url))))))
-       flatten
-       (filter seq)
-       (reset! awesome-releases)))
+  (let [data (->> @awesome
+                  (map #(str (get (val %) "releases_url") "?per_page=3"))
+                  (filter #(re-matches #"^https://.*" %))
+                  get-urls-json
+                  (map #(select-keys % [:url :html_url :tag_name :body :published_at]))
+                  (map #(update-in % [:body] (fn [s] (shorten-string s)))))]
+    (doseq [[k v] @awesome]
+      (let [rels (filter #(str/includes? (str/lower-case (:html_url %)) k) data)]
+        (swap! awesome assoc k (conj v {"releases" rels}))))))
 
 ;;; Output functions
 
@@ -475,13 +471,10 @@
 
 (defn output-awesome-json []
   (->> @awesome
-       (map (fn [[k v]] (assoc v :url k)))
+       vals
        flatten
        json/generate-string
        (spit "awesome.json")))
-
-(defn output-releases-json []
-  (spit "releases.json" (json/generate-string @awesome-releases)))
 
 (defn output-owners-json [& [full?]]
   (as-> (owners-to-map full?) o
@@ -706,7 +699,6 @@
   (output-forges-csv)
   (output-stats-json)
   (output-awesome-json)
-  (output-releases-json)
   (output-formations-json)
   (output-sill-providers)
   (output-sill-latest-xml))
@@ -715,8 +707,7 @@
   (log/info "Hosts:" (count @hosts))
   (log/info "Owners:" (count @owners))
   (log/info "Repositories:" (count @repositories))
-  (log/info "Awesome codegouvfr:" (count @awesome))
-  (log/info "Awesome releases:" (count @awesome-releases)))
+  (log/info "Awesome codegouvfr:" (count @awesome)))
 
 ;; Main execution
 (defn -main [args]
