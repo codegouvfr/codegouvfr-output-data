@@ -72,9 +72,12 @@
 (defn replace-vals [m v r]
   (walk/postwalk #(if (= % v) r %) m))
 
-(defn toInst
+(defn to-inst
   [^String s]
   (.toInstant (clojure.instant/read-instant-date s)))
+
+(defn to-percent [part all]
+  (Float/parseFloat (format "%.2f" (* 100 (/ (* part 1.0) all)))))
 
 (defn map-to-csv [m]
   (let [columns (keys (first m))
@@ -524,7 +527,7 @@
                :link        html_url
                :guid        uuid
                :description body
-               :pubDate     (toInst published_at)}))
+               :pubDate     (to-inst published_at)}))
        (rss/channel-xml
         {:title       "code.gouv.fr/sources - Nouvelles versions Awesome"
          :link        "https://code.gouv.fr/data/latest-releases.xml"
@@ -550,7 +553,7 @@
                  :link        (:html_url r-data)
                  :guid        r
                  :description (:description r-data)
-                 :pubDate     (toInst (:created_at r-data))})))
+                 :pubDate     (to-inst (:created_at r-data))})))
        (rss/channel-xml
         {:title       "code.gouv.fr/sources - Nouveaux dépôts de code source"
          :link        "https://code.gouv.fr/data/latest-repositories.xml"
@@ -563,7 +566,7 @@
     (let [n (if (= "GitHub" name) "github.com" name)]
       (spit "codegouvfr-forges.csv" (str n "," kind "\n") :append true))))
 
-(defn get-top-owners-by [k]
+(defn get-top-owners-by [n k]
   (->> @owners
        (filter #(when-let [s (get (val %) k)] (> s 1)))
        (map #(let [v (val %)]
@@ -572,30 +575,39 @@
        (into {})
        (sort-by val)
        reverse
-       (take 10)))
+       (take n)))
 
-(defn get-top-x [k]
+(defn get-top-x [n k]
   (let [m (filter k (vals @repositories))]
     (->> m
          (group-by k)
-         (map (fn [[k v]] {k (* 100 (/ (* (count v) 1.0) (count m)))}))
+         (map (fn [[k v]] {k (to-percent (count v) (count m))}))
          (into {})
          (sort-by val)
          reverse
-         (take 10))))
+         (take n))))
+
+(defn get-top-owners-repos-stars [n]
+  (let [owners (filter #(let [v (val %)]
+                          (and (int? (:total_stars v))
+                               (int? (:repositories_count v))
+                               (> (:total_stars v) n)
+                               (> (:repositories_count v) n)))
+                       @owners)]
+    (for [[k v] owners]
+      {:owner              k
+       :total_stars        (:total_stars v)
+       :repositories_count (:repositories_count v)})))
 
 (defn output-stats-json []
-  (let [repositories_cnt (filter int? (map #(:repositories_count (val %)) @owners))
-        stats            {:repos_cnt         (str (count @repositories))
-                          :orgas_cnt         (str (count @owners))
-                          :avg_repos_cnt     (when (int? repositories_cnt)
-                                               (format "%.2f" (/ (reduce + repositories_cnt)
-                                                                 (* 1.0 (count repositories_cnt)))))
-                          :top_orgs_by_stars (get-top-owners-by :total_stars)
-                          :top_orgs_by_repos (get-top-owners-by :repositories_count)
-                          :top_licenses      (get-top-x :license)
-                          :top_languages     (get-top-x :language)}
-        stats-str        (json/generate-string stats)]
+  (let [stats     {:repos_cnt            (str (count @repositories))
+                   :orgas_cnt            (str (count @owners))
+                   :top_orgs_by_stars    (get-top-owners-by 10 :total_stars)
+                   :top_orgs_by_repos    (get-top-owners-by 10 :repositories_count)
+                   :top_orgs_repos_stars (get-top-owners-repos-stars 30)
+                   :top_licenses         (get-top-x 5 :license)
+                   :top_languages        (get-top-x 5 :language)}
+        stats-str (json/generate-string stats)]
     (spit (-> "yyyy-MM-dd"
               java.text.SimpleDateFormat.
               (.format (java.util.Date.))
@@ -647,7 +659,7 @@
                    :link        link
                    :guid        link
                    :description (:function item)
-                   :pubDate     (toInst (str (java.time.Instant/ofEpochMilli (:referencedSinceTime item))))})))
+                   :pubDate     (to-inst (str (java.time.Instant/ofEpochMilli (:referencedSinceTime item))))})))
          (rss/channel-xml
           {:title       "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"
            :link        "https://code.gouv.fr/data/latest-sill.xml"
