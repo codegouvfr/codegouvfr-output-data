@@ -587,15 +587,15 @@
          reverse
          (take n))))
 
-(defn get-top-owners-repos-stars [n]
+(defn get-top-owners-repos-stars [min_repos min_stars]
   (let [owners (filter #(let [v (val %)]
                           (and (int? (:total_stars v))
                                (int? (:repositories_count v))
-                               (> (:total_stars v) n)
-                               (> (:repositories_count v) n)))
+                               (> (:total_stars v) min_stars)
+                               (> (:repositories_count v) min_repos)))
                        @owners)]
     (for [[k v] owners]
-      {:owner              k
+      {:owner              (:name v)
        :total_stars        (:total_stars v)
        :repositories_count (:repositories_count v)})))
 
@@ -604,7 +604,7 @@
                    :orgas_cnt            (str (count @owners))
                    :top_orgs_by_stars    (get-top-owners-by 10 :total_stars)
                    :top_orgs_by_repos    (get-top-owners-by 10 :repositories_count)
-                   :top_orgs_repos_stars (get-top-owners-repos-stars 30)
+                   :top_orgs_repos_stars (get-top-owners-repos-stars 1 100)
                    :top_licenses         (get-top-x 5 :license)
                    :top_languages        (get-top-x 5 :language)}
         stats-str (json/generate-string stats)]
