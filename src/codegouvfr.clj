@@ -79,7 +79,7 @@
 (defn to-percent [part all]
   (Float/parseFloat (format "%.2f" (* 100 (/ (* part 1.0) all)))))
 
-(defn map-to-csv [m]
+(defn maps-to-csv [m]
   (let [columns (keys (first m))
         header  (map name columns)
         rows    (mapv #(mapv % columns) m)]
@@ -162,7 +162,7 @@
 (defn owners-to-csv []
   (->> (owners-to-map :full)
        (map #(set/rename-keys % owners-keys-mapping))
-       map-to-csv))
+       maps-to-csv))
 
 (defn compute-repository-awesome-score
   [{:keys [metadata template description fork forks_count
@@ -266,7 +266,7 @@
 (defn repositories-to-csv []
   (->> (repositories-to-map :full)
        (map #(set/rename-keys % repositories-keys-mapping))
-       map-to-csv))
+       maps-to-csv))
 
 ;;; Fetching functions
 
@@ -668,7 +668,7 @@
 
 ;; Testing gum
 ;;
-;; (b/gum :table :in (clojure.java.io/input-stream "owners.csv" :height 10))
+"";; (b/gum :table :in (clojure.java.io/input-stream "owners.csv" :height 10))
 ;; (b/gum :pager
 ;;        :as :ignored
 ;;        :in (clojure.java.io/input-stream "https://git.sr.ht/~codegouvfr/codegouvfr-cli/blob/main/README.md")
