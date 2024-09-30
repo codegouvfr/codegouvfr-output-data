@@ -458,7 +458,7 @@
                   (map #(str (get (val %) "releases_url") "?per_page=3"))
                   (filter #(re-matches #"^https://.*" %))
                   get-urls-json
-                  (map #(select-keys % [:url :uuid :name :html_url :tag_name :body :published_at]))
+                  (map #(select-keys % [:url :name :html_url :tag_name :body :published_at]))
                   (map #(assoc % :repo_name
                                (last (re-matches #"https://[^/]+/([^/]+/[^/]+).*" (:html_url %)))))
                   (map #(update-in % [:body] (fn [s] (shorten-string s)))))]
@@ -522,10 +522,10 @@
        (sort-by #(clojure.instant/read-instant-date (:published_at %)))
        reverse
        (take 10)
-       (map (fn [{:keys [name repo_name html_url uuid body published_at]}]
+       (map (fn [{:keys [name repo_name html_url body published_at]}]
               {:title       (format "Nouvelle version de %s : %s" repo_name name)
                :link        html_url
-               :guid        uuid
+               :guid        html_url
                :description body
                :pubDate     (to-inst published_at)}))
        (rss/channel-xml
