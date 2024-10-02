@@ -271,13 +271,13 @@
   (when-let [data (doall (map #(http/get % {:async true :throw false}) urls))]
     (doall (map (comp :body deref) data))))
 
-(defn- get-urls-json [urls & [info]]
-  (when info (log/info info))
+(defn- get-urls-json [urls & [msg]]
+  (when msg (log/info msg))
   (when-let [data (get-urls urls)]
     (flatten (map #(json/parse-string % true) data))))
 
-(defn- get-urls-yaml [urls & [info]]
-  (when info (log/info info))
+(defn- get-urls-yaml [urls & [msg]]
+  (when msg (log/info msg))
   (when-let [data (get-urls urls)]
     (flatten (map #(yaml/parse-string % :keywords false) data))))
 
