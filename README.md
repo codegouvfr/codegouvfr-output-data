@@ -13,7 +13,7 @@ This repository contains the `codegouvfr` script.
 
 # Installation
 
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/codegouvfr.clj`
+`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/codegouvfr-output-data.clj`
 
 # [Contributing](CONTRIBUTING.md)
 
