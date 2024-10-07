@@ -68,9 +68,6 @@
   [^String s]
   (.toInstant (clojure.instant/read-instant-date s)))
 
-(defn- to-percent [part all]
-  (Float/parseFloat (format "%.2f" (* 100 (/ (* part 1.0) all)))))
-
 (defn- maps-to-csv [m]
   (let [columns (keys (first m))
         header  (map name columns)
@@ -569,11 +566,15 @@
        reverse
        (take n)))
 
-(defn- get-top-x [n k]
-  (let [m (filter k (vals @repositories))]
-    (->> m
+(defn- get-top-x [n k & [exclude-re]]
+  (let [init-vals (vals @repositories)
+        proc-vals (if-let [xre exclude-re]
+                    (filter #(and (string? (get % k))
+                                  (nil? (re-matches xre (get % k)))) init-vals)
+                    (filter k init-vals))]
+    (->> proc-vals
          (group-by k)
-         (map (fn [[k v]] {k (to-percent (count v) (count m))}))
+         (map (fn [[k v]] {k (count v)}))
          (into {})
          (sort-by val)
          reverse
@@ -597,8 +598,8 @@
                    :top_orgs_by_stars    (get-top-owners-by 10 :total_stars)
                    :top_orgs_by_repos    (get-top-owners-by 10 :repositories_count)
                    :top_orgs_repos_stars (get-top-owners-repos-stars 1 100)
-                   :top_licenses         (get-top-x 5 :license)
-                   :top_languages        (get-top-x 5 :language)}
+                   :top_licenses         (get-top-x 10 :license #"(?i)other")
+                   :top_languages        (get-top-x 10 :language)}
         stats-str (json/generate-string stats)]
     (spit (-> "yyyy-MM-dd"
               java.text.SimpleDateFormat.
