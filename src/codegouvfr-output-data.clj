@@ -567,18 +567,18 @@
        (take n)))
 
 (defn- get-top-x [n k & [exclude-re]]
-  (let [init-vals (vals @repositories)
-        proc-vals (if-let [xre exclude-re]
-                    (filter #(and (string? (get % k))
-                                  (nil? (re-matches xre (get % k)))) init-vals)
-                    (filter k init-vals))]
-    (->> proc-vals
-         (group-by k)
-         (map (fn [[k v]] {k (count v)}))
-         (into {})
-         (sort-by val)
-         reverse
-         (take n))))
+  (->> @repositories
+       vals
+       (filter #(if-let [xre exclude-re]
+                  (when-let [v (not-empty (get % k))]
+                    (nil? (re-matches xre v)))
+                  (get % k)))
+       (group-by k)
+       (map (fn [[k v]] {k (count v)}))
+       (into {})
+       (sort-by val)
+       reverse
+       (take n)))
 
 (defn- get-top-owners-repos-stars [min_repos min_stars]
   (let [owners (filter #(let [v (val %)]
