@@ -4,9 +4,10 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: LICENSE.txt
 
-(deps/add-deps '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
-(deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.8.60"}}})
-(deps/add-deps '{:deps {org.babashka/http-client {:mvn/version "0.3.11"}}})
+(deps/add-deps
+ '{:deps {clj-rss/clj-rss          {:mvn/version "0.4.0"}
+          org.babashka/cli         {:mvn/version "0.8.60"}
+          org.babashka/http-client {:mvn/version "0.3.11"}}})
 
 (require '[clj-rss.core :as rss]
          '[clojure.tools.logging :as log]
@@ -245,7 +246,7 @@
                     (str "https://" host "/" owner)))
             :p  platform
             :p? (false? (empty? (:publiccode files)))
-            :t? template
+            :t? (or template false)
             :u  updated_at}
            (when full? {:id html_url}))))
       (replace-vals nil "")))
