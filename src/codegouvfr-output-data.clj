@@ -95,14 +95,12 @@
   (->> owners
        (filter (fn [[_ v]]
                  (and (not-empty (:html_url v))
-                      (> (:repositories_count v) 0))))))
+                      (when-let [repos_cnt (:repositories_count v)]
+                        (> repos_cnt 0)))))))
 
 (defn- filter-repositories [repositories]
   (->> repositories
-       (filter #(let [{:keys [metadata archived owner_url]} (val %)]
-                  (and (not-empty owner_url)
-                       (not-empty (:readme (:files metadata)))
-                       (not archived))))))
+       (filter #(not-empty (:owner_url (val %))))))
 
 (def owners-keys-mapping
   {:a  :location
@@ -155,13 +153,14 @@
 
 (defn- compute-repository-awesome-score
   [{:keys [metadata template description fork forks_count
-           subscribers_count stargazers_count]}]
+           archived subscribers_count stargazers_count]}]
   (let [files  (:files metadata)
         high   1000
         medium 100
         low    10]
-    ;; We assume a readme and not archived
     (+
+     ;; Does the repo have a README?
+     (if (:readme files) high 0)
      ;; Does the repo have a license?
      (if (:license files) high 0)
      ;; Does the repo have a publiccode.yml file?
@@ -172,6 +171,8 @@
      (if (:contributing files) medium 0)
      ;; Does the repo have a description?
      (if (not-empty description) 0 (- medium))
+     ;; Is the repo archived?
+     (if archived (- high) 0)
      ;; Is the repo a fork?
      (if fork (- high) 0)
      ;; Does the repo have many forks?
@@ -201,6 +202,7 @@
 
 (def repositories-keys-mapping
   {:a  :awesome-score
+   :a? :archived
    :u  :updated_at
    :d  :description
    :id :id
@@ -219,13 +221,14 @@
 (defn- repositories-as-map [repositories & [full?]]
   (-> (for [[_ {:keys [metadata owner_url description full_name
                        updated_at fork template language html_url
-                       license forks_count platform]
+                       license forks_count archived platform]
                 :as   repo_data}] repositories]
         (let [short_desc (when (not-empty description) (shorten-string description))
               repo_name  (or (last (re-matches #".+/([^/]+)/?" full_name)) full_name)
               files      (:files metadata)]
           (conj
            {:a  (compute-repository-awesome-score repo_data)
+            :a? archived
             :c? (false? (empty? (:contributing files)))
             :d  (if full? description short_desc)
             :f  forks_count
@@ -396,7 +399,9 @@
 
 (defn- set-owners! []
   ;; Set owners by fetching data
-  (let [data (get-urls-json (map :owners_url @hosts) "Fetching owners data...")]
+  ;; FIXME: Handle case when there are more than 1000 owners per host
+  (let [data (get-urls-json (map #(str (:owners_url %) "?per_page=1000")
+                                 @hosts) "Fetching owners data...")]
     (doseq [o (filter #(= (:kind %) "organization") data)]
       (swap! owners assoc
              (str/lower-case (:owner_url o))
