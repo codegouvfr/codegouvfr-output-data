@@ -229,12 +229,12 @@
               files      (:files metadata)]
           (conj
            {:a  (compute-repository-awesome-score repo_data)
-            :a? archived
+            :a? (or archived false)
             :c? (false? (empty? (:contributing files)))
             :d  (if full? description short_desc)
             :f  forks_count
             :fn full_name
-            :f? fork
+            :f? (or fork false)
             :l  language
             :li license
             :n  repo_name
