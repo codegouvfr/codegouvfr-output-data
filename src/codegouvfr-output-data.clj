@@ -610,7 +610,7 @@
                    :top_orgs_by_stars        (get-top-owners-by 10 :total_stars)
                    :top_orgs_by_repos        (get-top-owners-by 10 :repositories_count)
                    :top_orgs_repos_stars     (get-top-owners-repos-stars 1 100)
-                   :top_orgs_repos_followers (get-top-owners-repos-followers 1 25)
+                   :top_orgs_repos_followers (get-top-owners-repos-followers 50 50)
                    :top_licenses             (get-top-x 10 :license #"(?i)other")
                    :top_languages            (get-top-x 10 :language)}
         stats-str (json/generate-string stats)]
