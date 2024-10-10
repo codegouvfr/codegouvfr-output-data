@@ -586,26 +586,33 @@
        reverse
        (take n)))
 
-(defn- get-top-owners-repos-stars [min_repos min_stars]
+(defn- get-top-owners-repos-k [min_repos min_k k]
   (let [owners (filter #(let [v (val %)]
-                          (and (int? (:total_stars v))
+                          (and (int? (get v k))
+                               (> (get v k) min_k)
                                (int? (:repositories_count v))
-                               (> (:total_stars v) min_stars)
                                (> (:repositories_count v) min_repos)))
                        @owners)]
     (for [[_ v] owners]
       {:owner              (:name v)
-       :total_stars        (:total_stars v)
+       k                   (get v k)
        :repositories_count (:repositories_count v)})))
 
+(defn- get-top-owners-repos-stars [min_repos min_stars]
+  (get-top-owners-repos-k min_repos min_stars :total_stars))
+
+(defn- get-top-owners-repos-followers [min_repos min_followers]
+  (get-top-owners-repos-k min_repos min_followers :followers))
+
 (defn- output-stats-json []
-  (let [stats     {:repos_cnt            (str (count @repositories))
-                   :orgas_cnt            (str (count @owners))
-                   :top_orgs_by_stars    (get-top-owners-by 10 :total_stars)
-                   :top_orgs_by_repos    (get-top-owners-by 10 :repositories_count)
-                   :top_orgs_repos_stars (get-top-owners-repos-stars 1 100)
-                   :top_licenses         (get-top-x 10 :license #"(?i)other")
-                   :top_languages        (get-top-x 10 :language)}
+  (let [stats     {:repos_cnt                (str (count @repositories))
+                   :orgas_cnt                (str (count @owners))
+                   :top_orgs_by_stars        (get-top-owners-by 10 :total_stars)
+                   :top_orgs_by_repos        (get-top-owners-by 10 :repositories_count)
+                   :top_orgs_repos_stars     (get-top-owners-repos-stars 1 100)
+                   :top_orgs_repos_followers (get-top-owners-repos-followers 1 25)
+                   :top_licenses             (get-top-x 10 :license #"(?i)other")
+                   :top_languages            (get-top-x 10 :language)}
         stats-str (json/generate-string stats)]
     (spit (-> "yyyy-MM-dd"
               java.text.SimpleDateFormat.
