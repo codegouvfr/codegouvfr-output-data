@@ -99,9 +99,12 @@
                       (when-let [repos_cnt (:repositories_count v)]
                         (> repos_cnt 0)))))))
 
-(defn- filter-repositories [repositories]
+(defn- filter-repositories-in [repositories]
   (->> repositories
        (filter #(not-empty (:owner_url (val %))))))
+
+(defn- filter-repositories-out [repositories]
+  (filter #(> (:a %) 0) repositories))
 
 (def owners-keys-mapping
   {:a  :location
@@ -252,9 +255,10 @@
       (replace-vals nil "")))
 
 (defn- repositories-to-map [& [full?]]
-  (-> @repositories 
-      filter-repositories
-      (repositories-as-map full?)))
+  (-> @repositories
+      filter-repositories-in
+      (repositories-as-map full?)
+      filter-repositories-out))
 
 (defn- repositories-to-csv []
   (->> (repositories-to-map :full)
@@ -604,6 +608,19 @@
 (defn- get-top-owners-repos-followers [min_repos min_followers]
   (get-top-owners-repos-k min_repos min_followers :followers))
 
+(defn- get-top-repos-by-score-range []
+  (let [score-range (fn [score]
+                      (let [lower (* (quot score 100) 100)
+                            upper (+ lower 100)]
+                        [lower upper]))
+        repos       (repositories-to-map)]
+    (->>  repos
+          (map :a)
+          (group-by score-range)
+          (map (fn [[range repos]] [range (count repos)]))
+          (into (sorted-map))
+          (map (fn [[[min max] v]] [(str min "-" max ) v])))))
+
 (defn- output-stats-json []
   (let [stats     {:repos_cnt                (str (count @repositories))
                    :orgas_cnt                (str (count @owners))
@@ -611,6 +628,7 @@
                    :top_orgs_by_repos        (get-top-owners-by 10 :repositories_count)
                    :top_orgs_repos_stars     (get-top-owners-repos-stars 1 100)
                    :top_orgs_repos_followers (get-top-owners-repos-followers 50 50)
+                   :top_repos_by_score_range (get-top-repos-by-score-range)
                    :top_licenses             (get-top-x 10 :license #"(?i)other")
                    :top_languages            (get-top-x 10 :language)}
         stats-str (json/generate-string stats)]
@@ -707,7 +725,9 @@
 (defn- display-data! []
   (log/info "Hosts:" (count @hosts))
   (log/info "Owners:" (count @owners))
+  (log/info "Owners (filtered):" (count (owners-to-map @owners)))
   (log/info "Repositories:" (count @repositories))
+  (log/info "Repositories (filtered):" (count (repositories-to-map @repositories)))
   (log/info "Awesome codegouvfr:" (count @awesome)))
 
 ;; Main execution
