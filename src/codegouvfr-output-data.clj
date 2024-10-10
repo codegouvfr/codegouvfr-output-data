@@ -611,7 +611,7 @@
               java.text.SimpleDateFormat.
               (.format (java.util.Date.))
               (str "-stats.json")) stats-str)
-    (spit "stats.json" stats-str)))
+    (spit "stats_preprod.json" stats-str)))
 
 (defn- output-formations-json []
   (when-let [res (fetch-yaml (:formations urls))]
