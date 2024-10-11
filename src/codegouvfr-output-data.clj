@@ -224,7 +224,7 @@
           :t? (or template false)
           :u  updated_at}
          (when full? {:id html_url}))))
-    (if full? repos (filter #(> (:a %) 0) repos))
+    (if full? repos (filter #(>= (:a %) 0) repos))
     (replace-vals repos nil "")))
 
 (defn- repositories-to-csv []
