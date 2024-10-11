@@ -31,31 +31,29 @@
 
 ;;; Initialize variables
 
-(def short_desc_size 120)
-(def cli-opts (atom nil))
-(def annuaire (atom {}))
-(def annuaire_tops (atom {}))
-(def hosts (atom ()))
-(def forges (atom ()))
-(def owners (atom {}))
-(def repositories (atom {}))
-(def awesome-data (atom nil))
-(def awesome (atom {}))
-(def awesome-releases (atom {}))
+(defonce short_desc_size 120)
+(defonce cli-opts (atom nil))
+(defonce annuaire (atom {}))
+(defonce annuaire_tops (atom {}))
+(defonce hosts (atom ()))
+(defonce forges (atom ()))
+(defonce owners (atom {}))
+(defonce repositories (atom {}))
+(defonce awesome-data (atom nil))
+(defonce awesome (atom {}))
+(defonce awesome-releases (atom {}))
 
-(def urls {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
-           :sill                       "https://code.gouv.fr/sill/api/sill.json"
-           :formations                 "https://code.gouv.fr/data/formations-logiciels-libres.yml"
-           :top_organizations          "https://code.gouv.fr/data/top_organizations.yml"
-           :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"
-           :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"
-           :cnll-providers             "https://annuaire.cnll.fr/api/prestataires-sill.json"
-           :cdl-providers              "https://comptoir-du-libre.org/public/export/comptoir-du-libre_export_v1.json"})
+(defonce urls
+  {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
+   :sill                       "https://code.gouv.fr/sill/api/sill.json"
+   :formations                 "https://code.gouv.fr/data/formations-logiciels-libres.yml"
+   :top_organizations          "https://code.gouv.fr/data/top_organizations.yml"
+   :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"
+   :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"
+   :cnll-providers             "https://annuaire.cnll.fr/api/prestataires-sill.json"
+   :cdl-providers              "https://comptoir-du-libre.org/public/export/comptoir-du-libre_export_v1.json"})
 
 ;;; Helper functions
-
-(defn- is-s-exe-available? [^String s]
-  (boolean (not-empty (:out (shell/sh "which" s)))))
 
 (defn- shorten-string [^String s]
   (if (> (count s) short_desc_size)
@@ -75,14 +73,14 @@
         rows    (mapv #(mapv % columns) m)]
     (cons header rows)))
 
-(defn- get-repo-properties [repo_url]
+(defn- get-repo-properties [repo_html_url]
   (->> @repositories
        (filter #(= (str/lower-case (:html_url (val %)))
-                   (str/lower-case repo_url)))
+                   (str/lower-case repo_html_url)))
        first
        second))
 
-(defn- publiccode-url [^String awesome-repo]
+(defn- get-publiccode-url [^String awesome-repo]
   (let [{:keys [html_url full_name default_branch platform]}
         (get-repo-properties awesome-repo)
         prefix-url
@@ -91,13 +89,6 @@
           "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
           (format "%s/-/raw/%s/" html_url default_branch))]
     (str prefix-url "publiccode.yml")))
-
-(defn- filter-owners [owners]
-  (->> owners
-       (filter (fn [[_ v]]
-                 (and (not-empty (:html_url v))
-                      (when-let [repos_cnt (:repositories_count v)]
-                        (> repos_cnt 0)))))))
 
 (def owners-keys-mapping
   {:a  :location
@@ -117,12 +108,12 @@
    :r  :repositories_count
    :s  :followers})
 
-(defn- owners-as-map [owners & [full?]]
-  (as-> (filter (fn [[_ v]]
-                  (and (not-empty (:html_url v))
-                       (when-let [repos_cnt (:repositories_count v)]
-                         (> repos_cnt 0))))
-                owners) owners
+(defn- owners-as-map [owners-init & [full?]]
+  (as-> (filter
+         (fn [[_ v]] (and (not-empty (:html_url v))
+                          (when-let [repos_cnt (:repositories_count v)]
+                            (> repos_cnt 0))))
+         owners-init) owners
     (for [[_ {:keys [description repositories_count html_url icon_url name
                      pso_top_id_name login followers created_at floss_policy
                      ospo_url website forge email location pso]}] owners]
@@ -148,7 +139,7 @@
        (map #(set/rename-keys % owners-keys-mapping))
        maps-to-csv))
 
-(defn- compute-repository-awesome-score
+(defn- compute-repo-score
   [{:keys [metadata template description fork forks_count
            archived subscribers_count stargazers_count]}]
   (let [files  (:files metadata)
@@ -156,46 +147,33 @@
         medium 100
         low    10]
     (+
-     ;; Does the repo have a README?
-     (if (:readme files) high 0)
      ;; Does the repo have a license?
-     (if (:license files) high 0)
-     ;; Does the repo have a publiccode.yml file?
-     (if (:publiccode files) high 0)
+     (if (not-empty (:license files)) high 0)
      ;; Is the repo a template?
-     (if template (* medium 2) 0)
+     (if template high 0)
+     ;; Does the repo have a publiccode.yml file?
+     (if (not-empty (:publiccode files)) high 0)
+     ;; Does the repo have a README?
+     (if (not-empty (:readme files)) medium 0)
      ;; Does the repo have a CONTRIBUTING.md file?
-     (if (:contributing files) medium 0)
+     (if (not-empty (:contributing files)) medium 0)
+     ;; Does the repo have a CHANGELOG.md file?
+     (if (not-empty (:changelog files)) low 0)
      ;; Does the repo have a description?
      (if (not-empty description) 0 (- medium))
      ;; Is the repo archived?
-     (if archived (- high) 0)
+     (if (or archived false) (- high) 0)
      ;; Is the repo a fork?
      (if fork (- high) 0)
      ;; Does the repo have many forks?
      (if-let [f forks_count]
-       (condp < f
-         1000 high
-         100  medium
-         10   low
-         0)
-       0)
+       (condp < f 100 high 10 medium 1 low 0) 0)
      ;; Does the repo have many subscribers?
      (if-let [f subscribers_count]
-       (condp < f
-         100 high
-         10  medium
-         1   low
-         0)
-       0)
+       (condp < f 100 high 10 medium 1 low 0) 0)
      ;; Does the repo have many star gazers?
      (if-let [s stargazers_count]
-       (condp < s
-         1000 high
-         100  medium
-         10   low
-         0)
-       0))))
+       (condp < s 1000 high 100 medium 10 low 0) 0))))
 
 (def repositories-keys-mapping
   {:a  :awesome-score
@@ -215,8 +193,8 @@
    :p  :platform
    :o  :owner})
 
-(defn- repositories-as-map [repositories & [full?]]
-  (as-> (filter #(not-empty (:owner_url (val %))) repositories) repos
+(defn- repositories-as-map [repos-init & [full?]]
+  (as-> (filter #(not-empty (:owner_url (val %))) repos-init) repos
     (for [[_ {:keys [metadata owner_url description full_name
                      updated_at fork template language html_url
                      license forks_count archived platform]
@@ -225,7 +203,7 @@
             repo_name  (or (last (re-matches #".+/([^/]+)/?" full_name)) full_name)
             files      (:files metadata)]
         (conj
-         {:a  (compute-repository-awesome-score repo_data)
+         {:a  (compute-repo-score repo_data)
           :a? (or archived false)
           :c? (false? (empty? (:contributing files)))
           :d  (if full? description short_desc)
@@ -401,15 +379,12 @@
              (str/lower-case (:owner_url o))
              (dissoc o :owner_url)))))
 
-(defn- query-pages-count [^Integer repos-count]
-  (int (clojure.math/floor (+ 1 (/ (- repos-count 1) 1000)))))
-
 (defn- hosts-to-query-urls [data]
   (->> data
        (sequence
         (comp
          (map #(select-keys % [:repositories_url :repositories_count :url]))
-         (map #(for [n (range (query-pages-count (:repositories_count %)))]
+         (map #(for [n (range (Math/ceil (/ (:repositories_count %) 1000)))]
                  (str (:repositories_url %)
                       "?page=" (+ n 1)
                       "&per_page=" (if (:test @cli-opts) "10" "1000"))))))
@@ -431,15 +406,13 @@
 
 (defn- set-awesome! []
   (let [awes (fetch-yaml (:awesome-codegouvfr urls))]
-    (reset! awesome-data
-            (get-urls-yaml (map publiccode-url (keys awes))))))
+    (reset! awesome-data (get-urls-yaml (map get-publiccode-url (keys awes))))))
 
 (defn- update-awesome! []
   (doseq [p @awesome-data]
     (let [repo_url (str/lower-case (get p "url"))]
       (swap! awesome assoc repo_url
-             (conj p {"releases_url" (:releases_url
-                                      (get-repo-properties repo_url))})))))
+             (conj p {"releases_url" (:releases_url (get-repo-properties repo_url))})))))
 
 (defn- set-awesome-releases! []
   (let [data (->> @awesome
@@ -601,14 +574,13 @@
   (let [score-range (fn [score]
                       (let [lower (* (quot score 100) 100)
                             upper (+ lower 100)]
-                        [lower upper]))
-        repos       (repositories-as-map @repositories)]
-    (->>  repos
-          (map :a)
-          (group-by score-range)
-          (map (fn [[range repos]] [range (count repos)]))
-          (into (sorted-map))
-          (map (fn [[[min max] v]] [(str min "-" max ) v])))))
+                        [lower upper]))]
+    (->> (repositories-as-map @repositories)
+         (map :a)
+         (group-by score-range)
+         (map (fn [[range repos]] [range (count repos)]))
+         (into (sorted-map))
+         (map (fn [[[min max] v]] [(str min "-" max ) v])))))
 
 (defn- output-stats-json []
   (let [stats     {:repos_cnt                (str (count @repositories))
@@ -730,3 +702,4 @@
           (display-data!)))))
 
 (-main *command-line-args*)
+
