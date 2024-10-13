@@ -530,9 +530,7 @@
 (defn- get-top-owners-by [n k]
   (->> @owners
        (filter #(when-let [s (get (val %) k)] (> s 1)))
-       (map #(let [v (val %)]
-               (hash-map (str (:name v) " (" (:forge v) ")")
-                         (get v k))))
+       (map #(let [v (val %)] [[(:name v) (:html_url v)] (get v k)]))
        (into {})
        (sort-by val)
        reverse
