@@ -3,15 +3,25 @@
 
 # Presentation
 
-This repository contains the `codegouvfr` script.
+This repository contains various scripts related to
+[code.gouv.fr](https://code.gouv.fr.)
 
 # Prerequisites
 
+The scripts are written in [Clojure](https://clojure.org/) with
+[Babashka](https://babashka.org/), a fast native Clojure scripting
+runtime.
+
 - [babashka](https://github.com/babashka/babashka#installation)
 - [bbin](https://github.com/babashka/bbin#installation)
-- [charm_ gum](https://github.com/charmbracelet/gum)
+
+Some scripts may use *gum*, a tool for glamorous shell scripts:
+
+- [charm_ gum](https://github.com/charmbracelet/gum#installation)
 
 # Installation
+
+Once `bbin` is installed in your environment, run this in a terminal:
 
 `bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/codegouvfr-output-data.clj`
 
