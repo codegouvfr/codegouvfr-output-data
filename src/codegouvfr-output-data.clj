@@ -207,7 +207,7 @@
           :a? (or archived false)
           :c? (false? (empty? (:contributing files)))
           :d  (if full? description short_desc)
-          :f  forks_count
+          :f  (if (int? forks_count) forks_count 0)
           :fn full_name
           :f? (or fork false)
           :l  language
