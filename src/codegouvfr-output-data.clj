@@ -443,14 +443,28 @@
        json/generate-string
        (spit "awesome.json")))
 
+(defonce awesome-codegouvfr-md-format-string
+  "# Awesome code.gouv.fr
+
+A list of [awesome code.gouv.fr projects](https://code.gouv.fr/fr/awesome) funded by French public organizations.
+
+%s
+
+# License
+
+DINUM, Bastien Guerry.
+
+This list is published under Licence Ouverte 2.0 and CC BY.")
+
 (defn- output-awesome-md []
   (->> (for [[_ {:strs [name url description ]}]
              (sort-by #(get (second %) "name") @awesome)]
          (let [desc (or (not-empty (get-in description ["fr" "shortDescription"]))
                         (not-empty (get-in description ["en" "shortDescription"]))
                         "N/A")]
-           (format "- [%s](%s) - %s" name url desc)))
+           (format "- [%s](%s) - %s" name url (str/trim desc))))
        (str/join "\n")
+       (format awesome-codegouvfr-md-format-string)
        (spit "awesome-codegouvfr.md")))
 
 (defn- output-owners-json [& [full?]]
