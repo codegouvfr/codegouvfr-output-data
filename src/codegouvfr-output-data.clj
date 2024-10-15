@@ -459,8 +459,8 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
 (defn- output-awesome-md []
   (->> (for [[_ {:strs [name url description ]}]
              (sort-by #(get (second %) "name") @awesome)]
-         (let [desc (or (not-empty (get-in description ["fr" "shortDescription"]))
-                        (not-empty (get-in description ["en" "shortDescription"]))
+         (let [desc (or (not-empty (get-in description ["en" "shortDescription"]))
+                        (not-empty (get-in description ["fr" "shortDescription"]))
                         "N/A")]
            (format "- [%s](%s) - %s" name url (str/trim desc))))
        (str/join "\n")
