@@ -443,6 +443,16 @@
        json/generate-string
        (spit "awesome.json")))
 
+(defn- output-awesome-md []
+  (->> (for [[_ {:strs [name url description ]}]
+             (sort-by #(get (second %) "name") @awesome)]
+         (let [desc (or (not-empty (get-in description ["fr" "shortDescription"]))
+                        (not-empty (get-in description ["en" "shortDescription"]))
+                        "N/A")]
+           (format "- [%s](%s) - %s" name url desc)))
+       (str/join "\n")
+       (spit "awesome-codegouvfr.md")))
+
 (defn- output-owners-json [& [full?]]
   (as-> (owners-as-map @owners full?) owners
     (mapv identity owners)
@@ -677,6 +687,7 @@
   (output-forges-csv)
   (output-stats-json)
   (output-awesome-json)
+  (output-awesome-md)
   (output-formations-json)
   (output-sill-providers)
   (output-sill-latest-xml))
