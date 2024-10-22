@@ -6,4 +6,4 @@
  :min-bb-version "0.4.0"
  :tasks          {clean
                   (shell "bash -c"
-                         "rm -rf *json *xml *csv *yml src/*json src/*xml src/*csv src/*yml")}}
+                         "rm -rf awesome*md *json *xml *csv *yml src/*json src/*xml src/*csv src/*yml")}}
