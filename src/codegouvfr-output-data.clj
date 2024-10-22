@@ -287,13 +287,12 @@
     (doseq [b (filter #(= (:type_hierarchie %) "Service Fils") (:hierarchie s_data))]
       (swap! annuaire update-in [(:service b)]
              conj
-             {:service_sup_id  s_id
-              :service_sup_nom (get-name-from-annuaire-id s_id)}))))
+             {:service_sup {:id s_id :nom (get-name-from-annuaire-id s_id)}}))))
 
 (defn- get-ancestor [service_sup_id]
   (let [seen (atom #{})]
     (loop [s_id service_sup_id]
-      (let [sup (:service_sup_id (get @annuaire s_id))]
+      (let [sup (:id (:service_sup (get @annuaire s_id)))]
         (if (or (nil? sup)
                 (contains? @seen s_id)
                 (some #{s_id} @annuaire_tops))
@@ -302,22 +301,18 @@
               (recur sup)))))))
 
 (defn- add-service-top! []
-  (doseq [[s_id s_data] (filter #(seq (:service_sup_id (val %))) @annuaire)]
-    (let [ancestor (get-ancestor (:service_sup_id s_data))]
-      (swap! annuaire
-             update-in
-             [s_id]
+  (doseq [[s_id s_data] (filter #(seq (:id (:service_sup (val %)))) @annuaire)]
+    (let [ancestor (get-ancestor (:id (:service_sup s_data)))]
+      (swap! annuaire update-in [s_id]
              conj
-             {:service_top_id  ancestor
-              :service_top_nom (get-name-from-annuaire-id ancestor)}))))
+             {:service_top {:id ancestor :nom (get-name-from-annuaire-id ancestor)}}))))
 
 (defn- set-annuaire! []
   ;; First download annuaire.json
   (fetch-annuaire-zip)
-  ;; Then set the @annuaire atom with a subset of annuaire.json
   (->> (json/parse-string (slurp "annuaire.json") true)
        :service
-       (map (fn [a] [(:id a) (select-keys a [:hierarchie :nom :sigle])]))
+       (map (fn [a] [(:id a) a]))
        (into {})
        (reset! annuaire))
   ;; Then set annuaire tops
@@ -363,7 +358,7 @@
   ;; Add top_id and top_id_name to owners
   (doseq [[k {:keys [pso_id]}] (filter #(:pso_id (val %)) @owners)]
     (let [top_id      (or (some #{pso_id} @annuaire_tops)
-                          (:service_top_id (get @annuaire pso_id)))
+                          (:id (:service_top (get @annuaire pso_id))))
           top_id_name (:nom (get @annuaire top_id))]
       (swap! owners update-in [k]
              conj {:pso_top_id      top_id
