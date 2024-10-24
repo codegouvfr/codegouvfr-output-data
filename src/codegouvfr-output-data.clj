@@ -82,13 +82,15 @@
 
 (defn- get-publiccode-url [^String awesome-repo]
   (let [{:keys [html_url full_name default_branch platform]}
-        (get-repo-properties awesome-repo)
-        prefix-url
-        (condp = platform
-          "github.com" (format "https://raw.githubusercontent.com/%s/%s/" full_name default_branch)
-          "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
-          (format "%s/-/raw/%s/" html_url default_branch))]
-    (str prefix-url "publiccode.yml")))
+        (get-repo-properties awesome-repo)]
+    (when-let [prefix-url
+               (condp = platform
+                 "github.com" (format "https://raw.githubusercontent.com/%s/%s/"
+                                      full_name default_branch)
+                 "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
+                 "gitlab.com" (format "%s/-/raw/%s/" html_url default_branch)
+                 nil)]
+      (str prefix-url "publiccode.yml"))))
 
 (def owners-keys-mapping
   {:a  :location
@@ -401,7 +403,7 @@
 
 (defn- set-awesome! []
   (let [awes (fetch-yaml (:awesome-codegouvfr urls))]
-    (reset! awesome-data (get-urls-yaml (map get-publiccode-url (keys awes))))))
+    (reset! awesome-data (get-urls-yaml (remove nil? (map get-publiccode-url (keys awes)))))))
 
 (defn- update-awesome! []
   (doseq [p @awesome-data]
@@ -723,4 +725,5 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
           (display-data!)))))
 
 (-main *command-line-args*)
+
 
