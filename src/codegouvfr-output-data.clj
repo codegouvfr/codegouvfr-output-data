@@ -440,6 +440,7 @@
            (conj (dissoc (into {} v) :hierarchie) {:id k})))))
 
 (defn- output-awesome-json []
+  (log/info "Output awesome.json...")
   (->> @awesome
        vals
        flatten
@@ -447,11 +448,9 @@
        (spit "awesome.json")))
 
 (defn- output-ospos-json []
-  (->> @ospos
-       vals
-       flatten
-       json/generate-string
-       (spit "fr-ospos.json")))
+  (log/info "Output fr-ospos.json...")
+  (spit "fr-ospos.json"
+        (json/generate-string (for [[k v] @ospos] (conj v {:url k})))))
 
 (defonce awesome-codegouvfr-md-format-string
   "# Awesome code.gouv.fr
@@ -467,6 +466,7 @@ DINUM, Bastien Guerry.
 This list is published under Licence Ouverte 2.0 and CC BY.")
 
 (defn- output-awesome-md []
+  (log/info "Output awesome-codegouvfr.md...")
   (->> (for [[_ {:strs [name url description ]}]
              (sort-by #(get (second %) "name") @awesome)]
          (let [desc (or (not-empty (get-in description ["en" "shortDescription"]))
@@ -478,6 +478,7 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
        (spit "awesome-codegouvfr.md")))
 
 (defn- output-owners-json [& [full?]]
+  (log/info "Output codegouvfr-organizations.json...")
   (as-> (owners-as-map @owners full?) owners
     (mapv identity owners)
     (if-not full? owners (map #(set/rename-keys % owners-keys-mapping) owners))
@@ -485,14 +486,17 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
     (spit (if full? "codegouvfr-organizations.json" "owners.json") owners)))
 
 (defn- output-owners-csv []
+  (log/info "Output codegouvfr-organizations.csv...")
   (with-open [file (io/writer "codegouvfr-organizations.csv")]
     (csv/write-csv file (owners-to-csv))))
 
 (defn- output-repositories-csv []
+  (log/info "Output codegouvfr-repositories.csv...")
   (with-open [file (io/writer "codegouvfr-repositories.csv")]
     (csv/write-csv file (repositories-to-csv))))
 
 (defn- output-latest-sill-xml []
+  (log/info "Output latest-sill.xml...")
   (->> (fetch-json (:sill urls))
        (sort-by #(java.util.Date. (:referencedSinceTime %)))
        reverse
@@ -510,6 +514,7 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
        (spit "latest-sill.xml")))
 
 (defn- output-latest-releases-xml []
+  (log/info "Output latest-releases.xml...")
   (->> @awesome
        vals
        (map #(get % "releases"))
@@ -530,12 +535,15 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
        (spit "latest-releases.xml")))
 
 (defn- output-repositories-json [& [full]]
-  (as-> (repositories-as-map @repositories full) repos
-    (if-not full repos (map #(set/rename-keys % repositories-keys-mapping) repos))
-    (json/generate-string repos)
-    (spit (if full "codegouvfr-repositories.json" "repos_preprod.json") repos)))
+  (let [file-name (if full "codegouvfr-repositories.json" "repos_preprod.json")]
+    (log/info (format "Output %s..." file-name))
+    (as-> (repositories-as-map @repositories full) repos
+      (if-not full repos (map #(set/rename-keys % repositories-keys-mapping) repos))
+      (json/generate-string repos)
+      (spit file-name repos))))
 
 (defn- output-latest-repositories-xml []
+  (log/info "Output latest-repositories.xml...")
   (->> @repositories
        (filter #(:created_at (val %)))
        (sort-by #(clojure.instant/read-instant-date (:created_at (val %))))
@@ -556,6 +564,7 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
        (spit "latest-repositories.xml")))
 
 (defn- output-forges-csv []
+  (log/info "Output codegouvfr-forges.csv...")
   (shell/sh "rm" "-f" "codegouvfr-forges.csv")
   (doseq [{:keys [name kind]} @hosts]
     (let [n (if (= "GitHub" name) "github.com" name)]
@@ -740,4 +749,5 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
           (display-data!)))))
 
 (-main *command-line-args*)
+
 
