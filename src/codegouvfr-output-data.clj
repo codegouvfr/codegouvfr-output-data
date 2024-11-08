@@ -41,6 +41,7 @@
 (defonce repositories (atom {}))
 (defonce awesome-data (atom nil))
 (defonce awesome (atom {}))
+(defonce ospos (atom {}))
 (defonce awesome-releases (atom {}))
 
 (defonce urls
@@ -49,6 +50,7 @@
    :formations                 "https://code.gouv.fr/data/formations-logiciels-libres.yml"
    :top_organizations          "https://code.gouv.fr/data/top_organizations.yml"
    :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"
+   :fr-public-sector-ospo      "https://code.gouv.fr/data/fr-public-sector-ospo.yml"
    :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"
    :cnll-providers             "https://annuaire.cnll.fr/api/prestataires-sill.json"
    :cdl-providers              "https://comptoir-du-libre.org/public/export/comptoir-du-libre_export_v1.json"})
@@ -401,6 +403,10 @@
   (when-let [res (fetch-yaml (:comptes-organismes-publics urls))]
     (reset! forges res)))
 
+(defn- set-ospos! []
+  (when-let [res (fetch-yaml (:fr-public-sector-ospo urls))]
+    (reset! ospos res)))
+
 (defn- set-awesome! []
   (let [awes (fetch-yaml (:awesome-codegouvfr urls))]
     (reset! awesome-data (get-urls-yaml (remove nil? (map get-publiccode-url (keys awes)))))))
@@ -439,6 +445,13 @@
        flatten
        json/generate-string
        (spit "awesome.json")))
+
+(defn- output-ospos-json []
+  (->> @ospos
+       vals
+       flatten
+       json/generate-string
+       (spit "fr-ospos.json")))
 
 (defonce awesome-codegouvfr-md-format-string
   "# Awesome code.gouv.fr
@@ -681,6 +694,7 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
     (update-owners!)
     (set-repos!)
     (when-not (:test @cli-opts)
+      (set-ospos!)
       (set-awesome!)
       (update-awesome!)
       (set-awesome-releases!))))
@@ -699,6 +713,7 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
   (output-forges-csv)
   (output-stats-json)
   (when-not (:test @cli-opts)
+    (output-ospos-json)
     (output-awesome-json)
     (output-awesome-md))
   (output-formations-json)
@@ -725,5 +740,4 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
           (display-data!)))))
 
 (-main *command-line-args*)
-
 
