@@ -45,7 +45,7 @@
 (defonce awesome-releases (atom {}))
 
 (defonce urls
-  {:hosts                      "https://repos.data.code.gouv.fr/api/v1/hosts"
+  {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
    :sill                       "https://code.gouv.fr/sill/api/sill.json"
    :formations                 "https://code.gouv.fr/data/formations-logiciels-libres.yml"
    :top_organizations          "https://code.gouv.fr/data/top_organizations.yml"
@@ -239,18 +239,26 @@
 ;;; Fetching functions
 
 (defn- get-url [url]
-  (try (http/get url)
+  (try (http/get url {:connection-timeout 30000})
        (catch Exception _
-         (log/error "Failed to fetch" url))))
+         (log/error "Failed to fetch " url))))
 
 (defn- get-urls [urls]
-  (when-let [data (doall (map #(http/get % {:async true :throw false}) urls))]
+  (when-let
+      [data (doall (map #(http/get % {:async              true
+                                      :throw              false
+                                      :connection-timeout 30000})
+                        urls))]
     (doall (map (comp :body deref) data))))
 
 (defn- get-urls-json [urls & [msg]]
   (when msg (log/info msg))
   (when-let [data (get-urls urls)]
-    (flatten (map #(json/parse-string % true) data))))
+    (flatten
+     (map #(try (json/parse-string % true)
+                (catch Exception _
+                  (log/error "Failed to fetch json data")))
+          data))))
 
 (defn- get-urls-yaml [urls & [msg]]
   (when msg (log/info msg))
@@ -272,7 +280,8 @@
 (defn- fetch-annuaire-zip []
   (log/info "Fetching annuaire as a zip file from data.gouv.fr...")
   (let [annuaire-zip-url "https://www.data.gouv.fr/fr/datasets/r/d0158eb2-6772-49c2-afb1-732e573ba1e5"
-        stream           (-> (http/get annuaire-zip-url {:as :bytes})
+        stream           (-> (http/get annuaire-zip-url
+                                       {:as :bytes :connection-timeout 30000})
                              :body
                              (io/input-stream)
                              (java.util.zip.ZipInputStream.))]
