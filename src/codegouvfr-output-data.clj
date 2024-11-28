@@ -144,15 +144,15 @@
        maps-to-csv))
 
 (defn- compute-repo-score
-  [{:keys [metadata template description fork forks_count
-           archived subscribers_count stargazers_count]}]
+  [{:keys [metadata template description fork forks_count archived subscribers_count]}]
   (let [files  (:files metadata)
         high   1000
         medium 100
         low    10]
     (+
-     ;; Does the repo have a license?
-     (if (not-empty (:license files)) high 0)
+     ;; Does the repo have a known license?
+     (let [license (:license files)]
+       (if (and (not-empty license) (not (= "other" license))) high 0))
      ;; Is the repo a template?
      (if template high 0)
      ;; Does the repo have a publiccode.yml file?
@@ -174,10 +174,7 @@
        (condp < f 100 high 10 medium 1 low 0) 0)
      ;; Does the repo have many subscribers?
      (if-let [f subscribers_count]
-       (condp < f 100 high 10 medium 1 low 0) 0)
-     ;; Does the repo have many star gazers?
-     (if-let [s stargazers_count]
-       (condp < s 1000 high 100 medium 10 low 0) 0))))
+       (condp < f 100 high 10 medium 1 low 0) 0))))
 
 (def repositories-keys-mapping
   {:a  :awesome-score
