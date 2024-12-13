@@ -45,7 +45,7 @@
 (defonce awesome-releases (atom {}))
 
 (defonce urls
-  {:hosts                      "https://data.code.gouv.fr/api/v1/hosts"
+  {:hosts                      "https://ecosystem.code.gouv.fr/api/v1/hosts"
    :sill                       "https://code.gouv.fr/sill/api/sill.json"
    :formations                 "https://code.gouv.fr/data/formations-logiciels-libres.yml"
    :top_organizations          "https://code.gouv.fr/data/top_organizations.yml"
