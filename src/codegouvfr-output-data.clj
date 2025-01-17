@@ -501,24 +501,6 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
   (with-open [file (io/writer "codegouvfr-repositories.csv")]
     (csv/write-csv file (repositories-to-csv))))
 
-(defn- output-latest-sill-xml []
-  (log/info "Output latest-sill.xml...")
-  (->> (fetch-json (:sill urls))
-       (sort-by #(java.util.Date. (:referencedSinceTime %)))
-       reverse
-       (take 10)
-       (map #(let [link (str "https://code.gouv.fr/sill/detail?name=" (:name %))]
-               {:title       (str "Nouveau logiciel au SILL : " (:name %))
-                :link        link
-                :guid        link
-                :description (:description %)
-                :pubDate     (.toInstant (java.util.Date. (:referencedSinceTime %)))}))
-       (rss/channel-xml
-        {:title       "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"
-         :link        "https://code.gouv.fr/data/latest-sill.xml"
-         :description "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"})
-       (spit "latest-sill.xml")))
-
 (defn- output-latest-releases-xml []
   (log/info "Output latest-releases.xml...")
   (->> @awesome
@@ -690,7 +672,7 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
                   {:title       (str "Nouveau logiciel au SILL : " (:name item))
                    :link        link
                    :guid        link
-                   :description (:function item)
+                   :description (:description item)
                    :pubDate     (to-inst (str (java.time.Instant/ofEpochMilli (:referencedSinceTime item))))})))
          (rss/channel-xml
           {:title       "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"
@@ -719,7 +701,6 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
   (output-owners-json :full)
   (output-owners-csv)
   (output-annuaire-sup)
-  (output-latest-sill-xml)
   (output-repositories-json)
   (output-repositories-json :full)
   (output-repositories-csv)
@@ -755,5 +736,3 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
           (display-data!)))))
 
 (-main *command-line-args*)
-
-
