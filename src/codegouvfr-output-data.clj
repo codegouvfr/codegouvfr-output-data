@@ -511,7 +511,7 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
                {:title       (str "Nouveau logiciel au SILL : " (:name %))
                 :link        link
                 :guid        link
-                :description (:function %)
+                :description (:description %)
                 :pubDate     (.toInstant (java.util.Date. (:referencedSinceTime %)))}))
        (rss/channel-xml
         {:title       "code.gouv.fr - Nouveaux logiciels libres au SILL - New SILL entries"
