@@ -6,8 +6,8 @@
 
 (deps/add-deps
  '{:deps {clj-rss/clj-rss          {:mvn/version "0.4.0"}
-          org.babashka/cli         {:mvn/version "0.8.60"}
-          org.babashka/http-client {:mvn/version "0.3.11"}}})
+          org.babashka/cli         {:mvn/version "0.8.62"}
+          org.babashka/http-client {:mvn/version "0.4.22"}}})
 
 (require '[clj-rss.core :as rss]
          '[clojure.tools.logging :as log]
