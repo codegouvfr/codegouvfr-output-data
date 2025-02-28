@@ -17,11 +17,10 @@
 ;;   "path" : [ "Section", "Subsection (as category)" ]
 ;; } ]
 
-(ns faq-server-dsfr
-  (:require [org.httpkit.server :as server]
-            [cheshire.core :as json]
-            [clojure.string :as str]
-            [babashka.cli :as cli]))
+(require '[org.httpkit.server :as server]
+         '[cheshire.core :as json]
+         '[clojure.string :as str]
+         '[babashka.cli :as cli])
 
 ;; Define CLI specs
 (def cli-options
@@ -196,7 +195,7 @@
             <div class=\"fr-grid-row fr-grid-row--gutters\">"
        (str/join "\n"
                  (for [category (get-categories faq-data)]
-                   (str "<div class=\"fr-col-12 fr-col-md-6 fr-mb-4w\">
+                   (str "<div class=\"fr-col-12 fr-col-md-4 fr-mb-4w\">
                          <div class=\"fr-card fr-enlarge-link fr-card--shadow\">
                            <div class=\"fr-card__body\">
                              <div class=\"fr-card__content\">
@@ -320,7 +319,7 @@
 (defn strip-base-path [uri]
   (let [base-path (:base-path settings)
         base-len  (count base-path)]
-    (if (and (not (empty? base-path))
+    (if (and (seq base-path)
              (str/starts-with? uri base-path))
       (let [path (subs uri base-len)]
         (if (str/starts-with? path "/")
