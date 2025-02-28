@@ -2,7 +2,7 @@
 
 ;; Copyright (c) DINUM, Bastien Guerry
 ;; SPDX-License-Identifier: EPL-2.0
-;; License-Filename: LICENSE.txt
+;; License-Filename: EPL-2.0.txt
 
 (deps/add-deps
  '{:deps {clj-rss/clj-rss          {:mvn/version "0.4.0"}

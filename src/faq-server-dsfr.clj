@@ -2,7 +2,11 @@
 
 ;; Copyright (c) DINUM, Bastien Guerry
 ;; SPDX-License-Identifier: EPL-2.0
-;; License-Filename: LICENSE.txt
+;; License-Filename: EPL-2.0.txt
+
+;; ~$ faq-server-dsfr -s https://code.gouv.fr/data/faq.json
+;;
+;; Then check http://localhost:8080
 
 (ns faq-server-dsfr
   (:require [org.httpkit.server :as server]
