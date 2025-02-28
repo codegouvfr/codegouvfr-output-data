@@ -366,7 +366,7 @@
       ;; Load FAQ data
       (let [faq-data (load-faq-data (:source parsed-settings))]
         ;; Start the server
-        (println "Starting server at http://localhost:" (:port settings))
+        (println (str "Starting server at http://localhost:" (:port settings)))
         (println "Site title:" (:title settings))
         (println "Site tagline:" (:tagline settings))
         (server/run-server (create-app faq-data) {:port (:port settings)})
