@@ -7,6 +7,15 @@
 ;; ~$ faq-server-dsfr -s https://code.gouv.fr/data/faq.json
 ;;
 ;; Then check http://localhost:8080
+;;
+;; Here is an example json with "title", "content" and "path", which
+;; subsection level is used to infer FAQ categories:
+;;
+;; [ {
+;;   "title" : "FAQ title",
+;;   "content" : "<p>Content as HTML",
+;;   "path" : [ "Section", "Subsection", "FAQ title" ]
+;; } ]
 
 (ns faq-server-dsfr
   (:require [org.httpkit.server :as server]
