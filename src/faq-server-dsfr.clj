@@ -14,14 +14,19 @@
 (def cli-options
   {:port    {:desc    "Port number for server"
              :default 8080
+             :alias   :p
              :coerce  :int}
    :source  {:desc    "Path to FAQ JSON file"
+             :alias   :s
              :default "faq.json"}
    :title   {:desc    "Website title"
+             :alias   :t
              :default "FAQ Logiciels Libres"}
    :tagline {:desc    "Website tagline"
+             :alias   :l
              :default "Questions fréquentes sur les logiciels libres"}
    :footer  {:desc    "Footer text"
+             :alias   :f
              :default "FAQ Logiciels Libres - Code.gouv.fr"}
    :help    {:desc   "Show help"
              :alias  :h
