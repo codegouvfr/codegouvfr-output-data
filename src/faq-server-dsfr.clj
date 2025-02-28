@@ -143,11 +143,6 @@
           </ul>
         </div>
       </div>
-      <div class=\"fr-footer__bottom\">
-        <div class=\"fr-footer__bottom-copy\">
-          <p>© République Française, 2023-2025</p>
-        </div>
-      </div>
     </div>
   </footer>
 
