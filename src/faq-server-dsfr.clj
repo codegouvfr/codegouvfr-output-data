@@ -9,12 +9,12 @@
 ;; Then check http://localhost:8080
 ;;
 ;; Here is an example json with "title", "content" and "path", which
-;; subsection level is used to infer FAQ categories:
+;; last item is used to infer the category:
 ;;
 ;; [ {
 ;;   "title" : "FAQ title",
 ;;   "content" : "<p>Content as HTML",
-;;   "path" : [ "Section", "Subsection", "FAQ title" ]
+;;   "path" : [ "Section", "Subsection (as category)" ]
 ;; } ]
 
 (ns faq-server-dsfr
@@ -96,12 +96,12 @@
 ;; Function to get categories from path
 (defn get-categories [faq-data]
   (let [paths      (map :path faq-data)
-        categories (distinct (map second paths))]
+        categories (distinct (map last paths))]
     (sort categories)))
 
 ;; Get FAQ items by category
 (defn get-faqs-by-category [category faq-data]
-  (filter #(= (second (:path %)) category) faq-data))
+  (filter #(= (last (:path %)) category) faq-data))
 
 ;; DSFR HTML Templates
 (defn dsfr-page-layout [page-title content]
@@ -282,7 +282,7 @@
                 </div>
               </div>
               <p class=\"fr-text--xs fr-mt-4w\">
-                Catégorie: <a href=\"" (with-base-path "/category") "?name=" (java.net.URLEncoder/encode (second (:path item)) "UTF-8") "\">" (second (:path item)) "</a>
+                Catégorie: <a href=\"" (with-base-path "/category") "?name=" (java.net.URLEncoder/encode (last (:path item)) "UTF-8") "\">" (last (:path item)) "</a>
               </p>
             </article>
           </div>
