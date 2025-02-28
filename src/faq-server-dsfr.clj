@@ -12,33 +12,45 @@
 
 ;; Define CLI specs
 (def cli-options
-  {:port    {:desc    "Port number for server"
-             :default 8080
-             :alias   :p
-             :coerce  :int}
-   :source  {:desc    "Path to FAQ JSON file"
-             :alias   :s
-             :default "faq.json"}
-   :title   {:desc    "Website title"
-             :alias   :t
-             :default "FAQ Logiciels Libres"}
-   :tagline {:desc    "Website tagline"
-             :alias   :l
-             :default "Questions fréquentes sur les logiciels libres"}
-   :footer  {:desc    "Footer text"
-             :alias   :f
-             :default "FAQ Logiciels Libres - Code.gouv.fr"}
-   :help    {:desc   "Show help"
-             :alias  :h
-             :coerce :boolean}})
+  {:port      {:desc    "Port number for server"
+               :default 8080
+               :alias   :p
+               :coerce  :int}
+   :source    {:desc    "Path to FAQ JSON file"
+               :alias   :s
+               :default "faq.json"}
+   :title     {:desc    "Website title"
+               :alias   :t
+               :default "FAQ - mission logiciels libres de la DINUM"}
+   :tagline   {:desc    "Website tagline"
+               :alias   :l
+               :default "Questions fréquentes sur les logiciels libres"}
+   :footer    {:desc    "Footer text"
+               :alias   :f
+               :default "FAQ - mission logiciels libres de la DINUM - code.gouv.fr"}
+   :base-path {:desc    "Base path for subdirectory deployment (e.g., /faq)"
+               :alias   :b
+               :default ""}
+   :help      {:desc   "Show help"
+               :alias  :h
+               :coerce :boolean}})
 
 ;; Settings with defaults
 (def settings
-  {:title   "FAQ Logiciels Libres"
-   :tagline "Questions fréquentes sur les logiciels libres"
-   :footer  "FAQ Logiciels Libres - Code.gouv.fr"
-   :source  "faq.json"
-   :port    8080})
+  {:title     "FAQ - mission logiciels libres de la DINUM"
+   :tagline   "Questions fréquentes sur les logiciels libres"
+   :footer    "FAQ - mission logiciels libres de la DINUM - code.gouv.fr"
+   :source    "faq.json"
+   :port      8080
+   :base-path ""})
+
+;; Function to append base path to URLs
+(defn with-base-path [path]
+  (let [base-path  (:base-path settings)
+        clean-base (if (str/ends-with? base-path "/")
+                     (subs base-path 0 (dec (count base-path)))
+                     base-path)]
+    (str clean-base path)))
 
 ;; Load FAQ data directly
 (defn load-faq-data [source]
@@ -109,7 +121,7 @@
               </div>
             </div>
             <div class=\"fr-header__service\">
-              <a href=\"/\" title=\"Accueil - " (:title settings) "\">
+              <a href=\"" (with-base-path "/") "\" title=\"Accueil - " (:title settings) "\">
                 <p class=\"fr-header__service-title\">" (:title settings) "</p>
               </a>
               <p class=\"fr-header__service-tagline\">" (:tagline settings) "</p>
@@ -161,7 +173,7 @@
   (str "<div class=\"fr-grid-row fr-grid-row--center\">
           <div class=\"fr-col-12 fr-col-md-8\">
             <h1 class=\"fr-mt-8w\">" (:title settings) "</h1>
-            <form action=\"/search\" method=\"get\" class=\"fr-search-bar fr-mt-4w fr-mb-8w\" role=\"search\">
+            <form action=\"" (with-base-path "/search") "\" method=\"get\" class=\"fr-search-bar fr-mt-4w fr-mb-8w\" role=\"search\">
               <label class=\"fr-label\" for=\"search-input\">Rechercher dans la FAQ</label>
               <input class=\"fr-input\" placeholder=\"Rechercher dans la FAQ...\" type=\"search\" id=\"search-input\" name=\"q\">
               <button class=\"fr-btn\" title=\"Rechercher\">
@@ -178,7 +190,7 @@
                            <div class=\"fr-card__body\">
                              <div class=\"fr-card__content\">
                                <h3 class=\"fr-card__title\">
-                                 <a href=\"/category?name=" (java.net.URLEncoder/encode category "UTF-8") "\" class=\"fr-card__link\">" category "</a>
+                                 <a href=\"" (with-base-path "/category") "?name=" (java.net.URLEncoder/encode category "UTF-8") "\" class=\"fr-card__link\">" category "</a>
                                </h3>
                                <p class=\"fr-card__desc\">" (count (get-faqs-by-category category faq-data)) " questions</p>
                              </div>
@@ -193,7 +205,7 @@
   (str "<div class=\"fr-grid-row fr-grid-row--center\">
           <div class=\"fr-col-12 fr-col-md-8\">
             <div class=\"fr-mt-2w\">
-              <a href=\"/\" class=\"fr-link fr-fi-arrow-left-line fr-link--icon-left\">Retour à l'accueil</a>
+              <a href=\"" (with-base-path "/") "\" class=\"fr-link fr-fi-arrow-left-line fr-link--icon-left\">Retour à l'accueil</a>
             </div>
             <h1 class=\"fr-mt-4w\">Catégorie : " category-name "</h1>
 
@@ -217,7 +229,7 @@
   (str "<div class=\"fr-grid-row fr-grid-row--center\">
           <div class=\"fr-col-12 fr-col-md-8\">
             <div class=\"fr-mt-2w\">
-              <a href=\"/\" class=\"fr-link fr-fi-arrow-left-line fr-link--icon-left\">Retour à l'accueil</a>
+              <a href=\"" (with-base-path "/") "\" class=\"fr-link fr-fi-arrow-left-line fr-link--icon-left\">Retour à l'accueil</a>
             </div>
             <h1 class=\"fr-mt-4w\">Résultats de recherche</h1>
             <p class=\"fr-text\">Résultats pour \"" query "\" (" (count results) ") :</p>
@@ -259,17 +271,17 @@
                 </div>
               </div>
               <p class=\"fr-text--xs fr-mt-4w\">
-                Catégorie: <a href=\"/category?name=" (java.net.URLEncoder/encode (second (:path item)) "UTF-8") "\">" (second (:path item)) "</a>
+                Catégorie: <a href=\"" (with-base-path "/category") "?name=" (java.net.URLEncoder/encode (second (:path item)) "UTF-8") "\">" (second (:path item)) "</a>
               </p>
             </article>
           </div>
         </div>"))
 
 (defn not-found-content []
-  "<div class=\"fr-grid-row fr-grid-row--center\">
+  (str "<div class=\"fr-grid-row fr-grid-row--center\">
      <div class=\"fr-col-12 fr-col-md-8\">
        <div class=\"fr-mt-2w\">
-         <a href=\"/\" class=\"fr-link fr-fi-arrow-left-line fr-link--icon-left\">Retour à l'accueil</a>
+         <a href=\"" (with-base-path "/") "\" class=\"fr-link fr-fi-arrow-left-line fr-link--icon-left\">Retour à l'accueil</a>
        </div>
        <h1 class=\"fr-mt-4w\">FAQ introuvable</h1>
        <div class=\"fr-alert fr-alert--error fr-mt-4w\">
@@ -277,13 +289,13 @@
          <p>Vérifiez l'URL ou effectuez une nouvelle recherche.</p>
        </div>
      </div>
-   </div>")
+   </div>"))
 
 (defn error-content []
-  "<div class=\"fr-grid-row fr-grid-row--center\">
+  (str "<div class=\"fr-grid-row fr-grid-row--center\">
      <div class=\"fr-col-12 fr-col-md-8\">
        <div class=\"fr-mt-2w\">
-         <a href=\"/\" class=\"fr-link fr-fi-arrow-left-line fr-link--icon-left\">Retour à l'accueil</a>
+         <a href=\"" (with-base-path "/") "\" class=\"fr-link fr-fi-arrow-left-line fr-link--icon-left\">Retour à l'accueil</a>
        </div>
        <h1 class=\"fr-mt-4w\">Page non trouvée</h1>
        <div class=\"fr-alert fr-alert--error fr-mt-4w\">
@@ -291,17 +303,30 @@
          <p>Vérifiez l'URL ou retournez à l'accueil.</p>
        </div>
      </div>
-   </div>")
+   </div>"))
+
+;; Function to extract path without base path
+(defn strip-base-path [uri]
+  (let [base-path (:base-path settings)
+        base-len  (count base-path)]
+    (if (and (not (empty? base-path))
+             (str/starts-with? uri base-path))
+      (let [path (subs uri base-len)]
+        (if (str/starts-with? path "/")
+          path
+          (str "/" path)))
+      uri)))
 
 ;; Create app function with faq-data as parameter
 (defn create-app [faq-data]
   (fn [{:keys [request-method uri query-string]}]
-    (let [params (when query-string
+    (let [path   (strip-base-path uri)
+          params (when query-string
                    (into {} (for [pair (str/split query-string #"&")]
                               (let [[k v] (str/split pair #"=")]
                                 [(keyword k) (java.net.URLDecoder/decode v "UTF-8")]))))]
 
-      (case [request-method uri]
+      (case [request-method path]
         [:get "/"]
         {:status  200
          :headers {"Content-Type" "text/html; charset=utf-8"}
@@ -367,6 +392,9 @@
       (let [faq-data (load-faq-data (:source parsed-settings))]
         ;; Start the server
         (println (str "Starting server at http://localhost:" (:port settings)))
+        (if (empty? (:base-path settings))
+          (println "Running at root path /")
+          (println "Running at base path:" (:base-path settings)))
         (println "Site title:" (:title settings))
         (println "Site tagline:" (:tagline settings))
         (server/run-server (create-app faq-data) {:port (:port settings)})
