@@ -12,6 +12,7 @@ The scripts are written in [Clojure](https://clojure.org/) with
 [Babashka](https://babashka.org/), a fast native Clojure scripting
 runtime.
 
+- [clojure](https://clojure.org/guides/install_clojure)
 - [babashka](https://github.com/babashka/babashka#installation)
 - [bbin](https://github.com/babashka/bbin#installation)
 
