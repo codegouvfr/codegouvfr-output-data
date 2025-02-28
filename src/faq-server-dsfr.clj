@@ -172,7 +172,6 @@
 (defn home-content [faq-data]
   (str "<div class=\"fr-grid-row fr-grid-row--center\">
           <div class=\"fr-col-12 fr-col-md-8\">
-            <h1 class=\"fr-mt-8w\">" (:title settings) "</h1>
             <form action=\"" (with-base-path "/search") "\" method=\"get\" class=\"fr-search-bar fr-mt-4w fr-mb-8w\" role=\"search\">
               <label class=\"fr-label\" for=\"search-input\">Rechercher dans la FAQ</label>
               <input class=\"fr-input\" placeholder=\"Rechercher dans la FAQ...\" type=\"search\" id=\"search-input\" name=\"q\">
@@ -181,7 +180,6 @@
               </button>
             </form>
 
-            <h2 class=\"fr-mt-8w\">Catégories</h2>
             <div class=\"fr-grid-row fr-grid-row--gutters\">"
        (str/join "\n"
                  (for [category (get-categories faq-data)]
