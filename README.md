@@ -15,15 +15,12 @@ runtime.
 - [babashka](https://github.com/babashka/babashka#installation)
 - [bbin](https://github.com/babashka/bbin#installation)
 
-Some scripts may use *gum*, a tool for glamorous shell scripts:
-
-- [charm_ gum](https://github.com/charmbracelet/gum#installation)
-
 # Installation
 
 Once `bbin` is installed in your environment, run this in a terminal:
 
-`bbin install https://githut.com/codegouvfr/codegouvfr-outils/blob/main/src/codegouvfr-output-data.clj`
+- `bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/codegouvfr-output-data.clj`
+- `bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/faq-server-dsfr.clj`
 
 # [Contributing](CONTRIBUTING.md)
 
@@ -33,6 +30,6 @@ If you like Clojure(script), you can support the ecosystem by making a donation 
 
 # Licence
 
-2023-2024 DINUM, Bastien Guerry.
+2023-2025 DINUM, Bastien Guerry.
 
 The code is published under the [EPL 2.0 license](LICENSES/LICENSE.EPL-2.0.txt).
