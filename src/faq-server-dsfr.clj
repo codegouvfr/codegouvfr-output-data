@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: EPL-2.0.txt
 
-;; ~$ faq-server-dsfr -s https://code.gouv.fr/data/faq.json
+;; ~$ faq-server-dsfr -f https://code.gouv.fr/data/faq.json
 ;;
 ;; Then check http://localhost:8080
 ;;
@@ -28,9 +28,12 @@
                :default 8080
                :alias   :p
                :coerce  :int}
-   :source    {:desc    "Path to FAQ JSON file"
-               :alias   :s
+   :faq       {:desc    "Path to FAQ JSON file"
+               :alias   :f
                :default "faq.json"}
+   :source    {:desc    "Path to the FAQ source"
+               :alias   :s
+               :default "https://github.com/codegouvfr/documentation/blob/main/index.org#foire-aux-questions"}
    :title     {:desc    "Website title"
                :alias   :t
                :default "FAQ - mission logiciels libres de la DINUM"}
@@ -38,7 +41,7 @@
                :alias   :l
                :default "Questions fréquentes sur les logiciels libres"}
    :footer    {:desc    "Footer text"
-               :alias   :f
+               :alias   :F
                :default "FAQ - mission logiciels libres de la DINUM - code.gouv.fr"}
    :base-path {:desc    "Base path for subdirectory deployment (e.g., /faq)"
                :alias   :b
@@ -52,7 +55,8 @@
   {:title     "FAQ - mission logiciels libres de la DINUM"
    :tagline   "Questions fréquentes sur les logiciels libres"
    :footer    "FAQ - mission logiciels libres de la DINUM - code.gouv.fr"
-   :source    "faq.json"
+   :source    "https://github.com/codegouvfr/documentation/blob/main/index.org#foire-aux-questions"
+   :faq       "faq.json"
    :port      8080
    :base-path ""})
 
@@ -170,6 +174,11 @@
               <a class=\"fr-footer__content-link\" href=\"https://data.gouv.fr\" target=\"_blank\" rel=\"noopener\">data.gouv.fr</a>
             </li>
           </ul>
+        </div>
+      </div>
+      <div class=\"fr-footer__bottom\">
+        <div class=\"fr-footer__bottom-copy\">
+          <p>Voir <a target=\"new\" href="\" (:source settings) "\">la source des questions et réponses</p>
         </div>
       </div>
     </div>
@@ -399,7 +408,7 @@
       (alter-var-root #'settings (constantly parsed-settings))
 
       ;; Load FAQ data
-      (let [faq-data (load-faq-data (:source parsed-settings))]
+      (let [faq-data (load-faq-data (:faq parsed-settings))]
         ;; Start the server
         (println (str "Starting server at http://localhost:" (:port settings)))
         (if (empty? (:base-path settings))
@@ -407,6 +416,7 @@
           (println "Running at base path:" (:base-path settings)))
         (println "Site title:" (:title settings))
         (println "Site tagline:" (:tagline settings))
+        (println "FAQ source:" (:source settings))
         (server/run-server (create-app faq-data) {:port (:port settings)})
         (println "Server started. Press Ctrl+C to stop.")
         @(promise)))
