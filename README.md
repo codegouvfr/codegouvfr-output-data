@@ -1,5 +1,5 @@
 [![img](https://img.shields.io/badge/code.gouv.fr-contributif-blue.svg)](https://code.gouv.fr/documentation/#/publier)
-[![Software License](https://img.shields.io/badge/Licence-EPL.svg)](https://git.sr.ht/~codegouvfr/codegouvfr-cli/tree/main/item/LICENSES/LICENSE.EPL-2.0.txt)
+[![Software License](https://img.shields.io/badge/Licence-EPL.svg)](https://githut.com/codegouvfr/codegouvfr-cli/tree/main/item/LICENSES/LICENSE.EPL-2.0.txt)
 
 # Presentation
 
@@ -23,7 +23,7 @@ Some scripts may use *gum*, a tool for glamorous shell scripts:
 
 Once `bbin` is installed in your environment, run this in a terminal:
 
-`bbin install https://git.sr.ht/~codegouvfr/codegouvfr-outils/blob/main/src/codegouvfr-output-data.clj`
+`bbin install https://githut.com/codegouvfr/codegouvfr-outils/blob/main/src/codegouvfr-output-data.clj`
 
 # [Contributing](CONTRIBUTING.md)
 
