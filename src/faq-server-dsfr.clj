@@ -226,7 +226,7 @@
             <div class=\"fr-mt-2w\">
               <a href=\"" (with-base-path "/") "\" class=\"fr-link fr-fi-arrow-left-line fr-link--icon-left\">Retour à l'accueil</a>
             </div>
-            <h1 class=\"fr-mt-4w\">Catégorie : " category-name "</h1>
+            <h1 class=\"fr-mt-4w\">" category-name "</h1>
 
             <div class=\"fr-accordions-group fr-mt-4w\">"
        (str/join "\n"
@@ -290,7 +290,7 @@
                 </div>
               </div>
               <p class=\"fr-text--xs fr-mt-4w\">
-                Catégorie: <a href=\"" (with-base-path "/category") "?name=" (java.net.URLEncoder/encode (last (:path item)) "UTF-8") "\">" (last (:path item)) "</a>
+                Catégorie : <a href=\"" (with-base-path "/category") "?name=" (java.net.URLEncoder/encode (last (:path item)) "UTF-8") "\">" (last (:path item)) "</a>
               </p>
             </article>
           </div>
@@ -349,23 +349,26 @@
         [:get "/"]
         {:status  200
          :headers {"Content-Type" "text/html; charset=utf-8"}
-         :body    (dsfr-page-layout "Accueil" (home-content faq-data))}
+         :body    (dsfr-page-layout
+                   "Accueil" (home-content faq-data))}
 
         [:get "/category"]
         (let [category-name (:name params)
               category-faqs (get-faqs-by-category category-name faq-data)]
           {:status  200
            :headers {"Content-Type" "text/html; charset=utf-8"}
-           :body    (dsfr-page-layout (str "Catégorie: " category-name)
-                                      (category-content category-name category-faqs))})
+           :body    (dsfr-page-layout
+                     (str "Catégorie : " category-name)
+                     (category-content category-name category-faqs))})
 
         [:get "/search"]
         (let [query   (:q params)
               results (search-faq query faq-data)]
           {:status  200
            :headers {"Content-Type" "text/html; charset=utf-8"}
-           :body    (dsfr-page-layout (str "Résultats pour: " query)
-                                      (search-content query results))})
+           :body    (dsfr-page-layout
+                     (str "Résultats pour : " query)
+                     (search-content query results))})
 
         [:get "/faq"]
         (let [id   (:id params)
@@ -373,18 +376,21 @@
           (if item
             {:status  200
              :headers {"Content-Type" "text/html; charset=utf-8"}
-             :body    (dsfr-page-layout (:title item)
-                                        (faq-content item))}
+             :body    (dsfr-page-layout
+                       (:title item)
+                       (faq-content item))}
             {:status  404
              :headers {"Content-Type" "text/html; charset=utf-8"}
-             :body    (dsfr-page-layout "FAQ introuvable"
-                                        (not-found-content))}))
+             :body    (dsfr-page-layout
+                       "FAQ introuvable"
+                       (not-found-content))}))
 
         ;; Default route - 404
         {:status  404
          :headers {"Content-Type" "text/html; charset=utf-8"}
-         :body    (dsfr-page-layout "Page non trouvée"
-                                    (error-content))}))))
+         :body    (dsfr-page-layout
+                   "Page non trouvée"
+                   (error-content))}))))
 
 ;; Show help
 (defn show-help []
