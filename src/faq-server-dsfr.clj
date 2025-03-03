@@ -116,11 +116,11 @@
   <title>" page-title " - " (:title settings) "</title>
 
   <!-- DSFR -->
-  <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.9.3/dist/dsfr/dsfr.min.css\">
-  <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.9.3/dist/utility/utility.min.css\">
-  <link rel=\"apple-touch-icon\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.9.3/dist/favicon/apple-touch-icon.png\">
-  <link rel=\"icon\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.9.3/dist/favicon/favicon.svg\" type=\"image/svg+xml\">
-  <link rel=\"shortcut icon\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.9.3/dist/favicon/favicon.ico\" type=\"image/x-icon\">
+  <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.1/dist/dsfr/dsfr.min.css\">
+  <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.1/dist/utility/utility.min.css\">
+  <link rel=\"apple-touch-icon\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.1/dist/favicon/apple-touch-icon.png\">
+  <link rel=\"icon\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.1/dist/favicon/favicon.svg\" type=\"image/svg+xml\">
+  <link rel=\"shortcut icon\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.1/dist/favicon/favicon.ico\" type=\"image/x-icon\">
   <meta name=\"theme-color\" content=\"#000091\">
 </head>
 <body>
@@ -185,8 +185,8 @@
   </footer>
 
   <!-- DSFR Scripts -->
-  <script type=\"module\" src=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.9.3/dist/dsfr/dsfr.module.min.js\"></script>
-  <script type=\"text/javascript\" nomodule src=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.9.3/dist/dsfr/dsfr.nomodule.min.js\"></script>
+  <script type=\"module\" src=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.1/dist/dsfr/dsfr.module.min.js\"></script>
+  <script type=\"text/javascript\" nomodule src=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.1/dist/dsfr/dsfr.nomodule.min.js\"></script>
 </body>
 </html>"))
 
