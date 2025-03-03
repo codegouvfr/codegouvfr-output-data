@@ -89,12 +89,32 @@
       (str/replace #"</em>_" "_")
       (str/replace #"_</em>" "_")))
 
-;; Simple search function
+;; Helper function to strip HTML tags for text content searching
+(defn strip-html [html]
+  (-> html
+      (str/replace #"<[^>]*>" "")
+      (str/replace #"&nbsp;" " ")
+      (str/replace #"&lt;" "<")
+      (str/replace #"&gt;" ">")
+      (str/replace #"&amp;" "&")
+      (str/replace #"&quot;" "\"")
+      (str/replace #"&apos;" "'")))
+
+;; Enhanced search function that includes content
 (defn search-faq [query faq-data]
   (if (or (nil? query) (empty? query))
     []
     (let [query-lower (str/lower-case query)]
-      (filter #(str/includes? (str/lower-case (:title %)) query-lower) faq-data))))
+      (filter (fn [item]
+                (or
+                 ;; Search in title
+                 (str/includes? (str/lower-case (:title item)) query-lower)
+                 ;; Search in content (stripping HTML tags)
+                 (let [content-text (strip-html (:content item))]
+                   (str/includes? (str/lower-case content-text) query-lower))
+                 ;; Search in category/path
+                 (some #(str/includes? (str/lower-case %) query-lower) (:path item))))
+              faq-data))))
 
 ;; Function to get categories from path
 (defn get-categories [faq-data]
