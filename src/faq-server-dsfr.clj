@@ -99,15 +99,6 @@
       (println "Error loading FAQ data from" source ":" (.getMessage e))
       [])))
 
-;; Fix broken links in content
-(defn fix-content-links [content]
-  (-> content
-      (str/replace #"https://<em>(.*?)</em>" "https://$1")
-      (str/replace #"</em>/<em>" "/")
-      (str/replace #"</em><em>" "")
-      (str/replace #"</em>_" "_")
-      (str/replace #"_</em>" "_")))
-
 ;; Helper function to strip HTML tags for text content searching
 (defn strip-html [html]
   (-> html
@@ -284,7 +275,7 @@
                         (hash (:title item)) "\">" (:title item) "</button>
                          </h3>
                          <div class=\"fr-collapse\" id=\"accordion-" (hash (:title item)) "\">
-                           " (fix-content-links (:content item)) "
+                           " (:content item) "
                          </div>
                        </section>")))
        "</div>
@@ -315,7 +306,7 @@
                                (hash (:title item)) "\">" (:title item) "</button>
                              </h3>
                              <div class=\"fr-collapse\" id=\"accordion-" (hash (:title item)) "\">
-                               " (fix-content-links (:content item)) "
+                               " (:content item) "
                              </div>
                            </section>")))
               "</div>"))
@@ -333,7 +324,7 @@
               <h1>" (:title item) "</h1>
               <div class=\"fr-callout fr-mt-4w\">
                 <div class=\"fr-callout__text\">
-                  " (fix-content-links (:content item)) "
+                  " (:content item) "
                 </div>
               </div>
               <p class=\"fr-text--xs fr-mt-4w\">
