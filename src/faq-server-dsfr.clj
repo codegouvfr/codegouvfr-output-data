@@ -118,20 +118,42 @@
         (str/replace #"[\\'\";`]" "")      ;; Remove quotes and other potentially harmful chars
         (str/trim))))                       ;; Trim whitespace
 
+;; Normalize text for improved matching
+(defn normalize-text [text]
+  (when text
+    (-> text
+        (str/lower-case)
+        ;; Replace diacritical marks
+        (str/replace #"[àáâãäå]" "a")
+        (str/replace #"[èéêë]" "e")
+        (str/replace #"[ìíîï]" "i")
+        (str/replace #"[òóôõö]" "o")
+        (str/replace #"[ùúûü]" "u")
+        (str/replace #"[ýÿ]" "y")
+        (str/replace #"[ç]" "c")
+        (str/replace #"[œ]" "oe")
+        (str/replace #"[æ]" "ae")
+        (str/replace #"[ñ]" "n")
+        ;; Remove punctuation and special characters
+        (str/replace #"[.,;:!?'\"/\\(\\)\\[\\]{}]" " ")
+        ;; Collapse multiple spaces
+        (str/replace #"\s+" " ")
+        (str/trim))))
+
 (defn search-faq [query faq-data]
   (if (or (nil? query) (empty? query))
     []
-    (let [sanitized-query (sanitize-search-query query)
-          query-lower     (str/lower-case sanitized-query)]
+    (let [sanitized-query  (sanitize-search-query query)
+          query-normalized (normalize-text sanitized-query)]
       (filter (fn [item]
                 (or
                  ;; Search in title
-                 (str/includes? (str/lower-case (:title item)) query-lower)
+                 (str/includes? (normalize-text (:title item)) query-normalized)
                  ;; Search in content (stripping HTML tags)
                  (let [content-text (strip-html (:content item))]
-                   (str/includes? (str/lower-case content-text) query-lower))
+                   (str/includes? (normalize-text content-text) query-normalized))
                  ;; Search in category/path
-                 (some #(str/includes? (str/lower-case %) query-lower) (:path item))))
+                 (some #(str/includes? (normalize-text %) query-normalized) (:path item))))
               faq-data))))
 
 ;; Function to get categories from path
@@ -238,7 +260,6 @@
                 Rechercher
               </button>
             </form>
-
             <div class=\"fr-grid-row fr-grid-row--gutters\">"
        (str/join "\n"
                  (for [category (get-categories faq-data)]
@@ -472,7 +493,7 @@
         (println "Site tagline:" (:tagline settings))
         (println "FAQ source:" (:source settings))
         (server/run-server (create-app faq-data) {:port (:port settings)})
-        (println "Server started. Press Ctrl+C to stop.")
+        (println "Server started with improved text normalization. Press Ctrl+C to stop.")
         @(promise)))
     (catch Exception e
       (println "ERROR:" (.getMessage e))
