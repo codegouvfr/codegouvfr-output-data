@@ -68,6 +68,25 @@
                      base-path)]
     (str clean-base path)))
 
+;; Safely encode URL components to handle special characters
+(defn safe-url-encode [s]
+  (when s
+    (-> s
+        (java.net.URLEncoder/encode "UTF-8")
+        (str/replace "+" "%20")  ;; Replace + with %20 for spaces
+        (str/replace "%28" "(")  ;; Keep common characters readable
+        (str/replace "%29" ")")
+        (str/replace "%2C" ","))))
+
+;; Safely decode URL components
+(defn safe-url-decode [s]
+  (when s
+    (try
+      (java.net.URLDecoder/decode s "UTF-8")
+      (catch Exception e
+        (println "Warning: Error decoding URL parameter:" s)
+        s))))  ;; Return original on error
+
 ;; Load FAQ data directly
 (defn load-faq-data [source]
   (try
@@ -100,11 +119,19 @@
       (str/replace #"&quot;" "\"")
       (str/replace #"&apos;" "'")))
 
-;; Enhanced search function that includes content
+;; Protect search input by handling potentially harmful characters
+(defn sanitize-search-query [query]
+  (when query
+    (-> query
+        (str/replace #"[<>]" "")           ;; Remove < and > characters
+        (str/replace #"[\\'\";`]" "")      ;; Remove quotes and other potentially harmful chars
+        (str/trim))))                       ;; Trim whitespace
+
 (defn search-faq [query faq-data]
   (if (or (nil? query) (empty? query))
     []
-    (let [query-lower (str/lower-case query)]
+    (let [sanitized-query (sanitize-search-query query)
+          query-lower     (str/lower-case sanitized-query)]
       (filter (fn [item]
                 (or
                  ;; Search in title
@@ -229,7 +256,7 @@
                            <div class=\"fr-card__body\">
                              <div class=\"fr-card__content\">
                                <h3 class=\"fr-card__title\">
-                                 <a href=\"" (with-base-path "/category") "?name=" (java.net.URLEncoder/encode category "UTF-8") "\" class=\"fr-card__link\">" category "</a>
+                                 <a href=\"" (with-base-path "/category") "?name=" (safe-url-encode category) "\" class=\"fr-card__link\">" category "</a>
                                </h3>
                                <p class=\"fr-card__desc\">" (count (get-faqs-by-category category faq-data)) " questions</p>
                              </div>
@@ -310,7 +337,7 @@
                 </div>
               </div>
               <p class=\"fr-text--xs fr-mt-4w\">
-                Catégorie : <a href=\"" (with-base-path "/category") "?name=" (java.net.URLEncoder/encode (last (:path item)) "UTF-8") "\">" (last (:path item)) "</a>
+                Catégorie : <a href=\"" (with-base-path "/category") "?name=" (safe-url-encode (last (:path item))) "\">" (last (:path item)) "</a>
               </p>
             </article>
           </div>
@@ -356,14 +383,24 @@
           (str "/" path)))
       uri)))
 
+;; Parse query string with improved safety
+(defn parse-query-string [query-string]
+  (when query-string
+    (try
+      (into {}
+            (for [pair (str/split query-string #"&")]
+              (let [[k v] (str/split pair #"=" 2)]  ;; Limit to 2 parts
+                [(keyword (safe-url-decode k))
+                 (safe-url-decode (or v ""))])))  ;; Handle missing values
+      (catch Exception e
+        (println "Error parsing query string:" (.getMessage e))
+        {}))))
+
 ;; Create app function with faq-data as parameter
 (defn create-app [faq-data]
   (fn [{:keys [request-method uri query-string]}]
     (let [path   (strip-base-path uri)
-          params (when query-string
-                   (into {} (for [pair (str/split query-string #"&")]
-                              (let [[k v] (str/split pair #"=")]
-                                [(keyword k) (java.net.URLDecoder/decode v "UTF-8")]))))]
+          params (parse-query-string query-string)]
 
       (case [request-method path]
         [:get "/"]
@@ -378,7 +415,7 @@
           {:status  200
            :headers {"Content-Type" "text/html; charset=utf-8"}
            :body    (dsfr-page-layout
-                     (str "Catégorie : " category-name)
+                     (str "Catégorie : " category-name)
                      (category-content category-name category-faqs))})
 
         [:get "/search"]
@@ -387,7 +424,7 @@
           {:status  200
            :headers {"Content-Type" "text/html; charset=utf-8"}
            :body    (dsfr-page-layout
-                     (str "Résultats pour : " query)
+                     (str "Résultats pour : " query)
                      (search-content query results))})
 
         [:get "/faq"]
