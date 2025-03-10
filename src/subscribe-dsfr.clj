@@ -10,7 +10,7 @@
 ;; MAILGUN_LIST_ID (example: "my@list.com")
 ;; MAILGUN_API_ENDPOINT (example "https://api.eu.mailgun.net/v3")
 ;; MAILGUN_API_KEY (example "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxx"
-;; APP_BASE_PATH (optional, example: "/app" - for subdirectory deployments)
+;; SUBSCRIBE_BASE_PATH (optional, example: "/app" - for subdirectory deployments)
 ;;
 ;; Running the web application as http://localhost:8080
 ;;
@@ -31,39 +31,20 @@
          '[babashka.http-client :as http]
          '[clojure.string :as str]
          '[cheshire.core :as json]
-         '[clojure.tools.logging :as log]
-         '[clojure.edn :as edn]) ;; Added EDN requirement for config files
-
-;; Configure basic logging
-(def logging-config
-  {:level     :debug
-   :console   true
-   :appenders {:println {:min-level :debug
-                         :fn        #(println %)}}})
-
-;; Base path configuration for subdirectory deployments
-(def base-path
-  (let [path (or (System/getenv "APP_BASE_PATH") "")]
-    (if (str/blank? path)
-      ""
-      (if (str/ends-with? path "/")
-        (str/replace path #"/$" "")  ;; Remove trailing slash
-        path))))
-
-(log/info "APP_BASE_PATH:" (if (str/blank? base-path) "[not set]" base-path))
-
-;; Helper function to construct paths with the base path
-(defn make-path [& segments]
-  (let [segments (remove str/blank? segments)]
-    (str base-path
-         (if (and (not (str/blank? base-path))
-                  (not (str/starts-with? (first segments) "/")))
-           "/"
-           "")
-         (str/join "/" segments))))
+         '[taoensso.timbre :as log]
+         '[clojure.edn :as edn])
 
 ;; Default language setting
 (def default-language :en)
+
+;; Default logging level
+(def log-min-level :info)
+
+;; Configure Timbre logging
+(log/merge-config!
+ {:min-level      log-min-level
+  :timestamp-opts {:pattern "yyyy-MM-dd HH:mm:ss"}
+  :appenders      {:println {:enabled? true}}})
 
 ;; Anti-Spam protections
 (def rate-limit-window (* 60 60 1000)) ;; 1 hour in milliseconds
@@ -81,10 +62,30 @@
   (or (System/getenv "MAILGUN_API_KEY")
       (log/error "Missing MAILGUN_API_KEY")))
 
+;; Base path configuration for subdirectory deployments
+(def base-path
+  (let [path (or (System/getenv "SUBSCRIBE_BASE_PATH") "")]
+    (if (str/blank? path)
+      ""
+      (if (str/ends-with? path "/")
+        (str/replace path #"/$" "")  ;; Remove trailing slash
+        path))))
+
 ;; Log configuration
 (log/info "MAILGUN_LIST_ID:" mailgun-list-id)
 (log/info "MAILGUN_API_ENDPOINT:" mailgun-api-endpoint)
 (log/info "MAILGUN_API_KEY:" (if mailgun-api-key "****" "Not set"))
+(log/info "SUBSCRIBE_BASE_PATH:" (if (str/blank? base-path) "[not set]" base-path))
+
+;; Helper function to construct paths with the base path
+(defn make-path [& segments]
+  (let [segments (remove str/blank? segments)]
+    (str base-path
+         (if (and (not (str/blank? base-path))
+                  (not (str/starts-with? (first segments) "/")))
+           "/"
+           "")
+         (str/join "/" segments))))
 
 ;; Centralized Mailgun Authentication Helper
 (defn get-mailgun-auth-header
