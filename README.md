@@ -22,6 +22,7 @@ Once `bbin` is installed in your environment, run this in a terminal:
 
 - `bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/codegouvfr-output-data.clj`
 - `bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/faq-server-dsfr.clj`
+- `bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/subscribe-dsfr.clj`
 
 # [Contributing](CONTRIBUTING.md)
 
