@@ -8,13 +8,17 @@ This repository contains various scripts related to
 
 # Prerequisites
 
-The scripts are written in [Clojure](https://clojure.org/) with
-[Babashka](https://babashka.org/), a fast native Clojure scripting
-runtime.
+The scripts are written in [Clojure](https://clojure.org) with
+[Babashka](https://babashka.org) and we recommend installing them with
+[bbin](https://github.com/babashka/bbin).
 
-- [clojure](https://clojure.org/guides/install_clojure)
-- [babashka](https://github.com/babashka/babashka#installation)
-- [bbin](https://github.com/babashka/bbin#installation)
+-   [Install Clojure](https://clojure.org/guides/install_clojure)
+-   [Install babashka](https://github.com/babashka/babashka#installation)
+-   [Install bbin](https://github.com/babashka/bbin#installation)
+
+This should take care of installing all you need:
+
+    ~$ brew install babashka/brew/bbin
 
 # Installation
 
