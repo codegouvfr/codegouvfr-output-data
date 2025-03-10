@@ -10,6 +10,7 @@
 ;; MAILGUN_LIST_ID (example: "my@list.com")
 ;; MAILGUN_API_ENDPOINT (example "https://api.eu.mailgun.net/v3")
 ;; MAILGUN_API_KEY (example "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxx"
+;; APP_BASE_PATH (optional, example: "/app" - for subdirectory deployments)
 ;;
 ;; Running the web application as http://localhost:8080
 ;;
@@ -39,6 +40,27 @@
    :console   true
    :appenders {:println {:min-level :debug
                          :fn        #(println %)}}})
+
+;; Base path configuration for subdirectory deployments
+(def base-path
+  (let [path (or (System/getenv "APP_BASE_PATH") "")]
+    (if (str/blank? path)
+      ""
+      (if (str/ends-with? path "/")
+        (str/replace path #"/$" "")  ;; Remove trailing slash
+        path))))
+
+(log/info "APP_BASE_PATH:" (if (str/blank? base-path) "[not set]" base-path))
+
+;; Helper function to construct paths with the base path
+(defn make-path [& segments]
+  (let [segments (remove str/blank? segments)]
+    (str base-path
+         (if (and (not (str/blank? base-path))
+                  (not (str/starts-with? (first segments) "/")))
+           "/"
+           "")
+         (str/join "/" segments))))
 
 ;; Default language setting
 (def default-language :en)
@@ -327,16 +349,16 @@
   <meta charset=\"UTF-8\">
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
   <title>%s</title>
-  
+
   <!-- DSFR resources -->
   <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.0/dist/dsfr/dsfr.min.css\">
   <link rel=\"apple-touch-icon\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.0/dist/favicon/apple-touch-icon.png\">
   <link rel=\"icon\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.0/dist/favicon/favicon.svg\" type=\"image/svg+xml\">
   <link rel=\"shortcut icon\" href=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.0/dist/favicon/favicon.ico\" type=\"image/x-icon\">
-  
+
   <!-- HTMX for form interactions -->
   <script src=\"https://unpkg.com/htmx.org@1.9.6\"></script>
-  
+
   <style>
     .success {
       border-left: 5px solid var(--success-425-625);
@@ -344,21 +366,21 @@
       margin-bottom: 1rem;
       background-color: var(--success-950-100);
     }
-    
+
     .error {
       border-left: 5px solid var(--error-425-625);
       padding: 1rem;
       margin-bottom: 1rem;
       background-color: var(--error-950-100);
     }
-    
+
     .warning {
       border-left: 5px solid var(--warning-425-625);
       padding: 1rem;
       margin-bottom: 1rem;
       background-color: var(--warning-950-100);
     }
-    
+
     .debug {
       margin-top: 1rem;
       padding: 1rem;
@@ -369,20 +391,20 @@
       display: none;
       font-size: 0.85rem;
     }
-    
+
     .htmx-indicator {
       opacity: 0;
       transition: opacity 200ms ease-in;
     }
-    
+
     .htmx-request .htmx-indicator {
       opacity: 1;
     }
-    
+
     .htmx-request.htmx-indicator {
       opacity: 1;
     }
-    
+
     /* Honeypot field - hidden from users but visible to bots */
     .visually-hidden {
       position: absolute;
@@ -391,7 +413,7 @@
       width: 1px;
       overflow: hidden;
     }
-    
+
     .fr-subscribe-form {
       padding: 2rem 0;
     }
@@ -434,8 +456,8 @@
                 <div class=\"fr-card__content\">
                   <h2>%s</h2>
                   <p>%s</p>
-                  
-                  <form hx-post=\"/subscribe\" hx-target=\"#result\" hx-swap=\"outerHTML\" hx-indicator=\"#loading\" class=\"fr-form\">
+
+                  <form hx-post=\"%s/subscribe\" hx-target=\"#result\" hx-swap=\"outerHTML\" hx-indicator=\"#loading\" class=\"fr-form\">
                     <div class=\"fr-input-group\">
                       <label class=\"fr-label\" for=\"email\">E-mail</label>
                       <input class=\"fr-input\" type=\"email\" id=\"email\" name=\"email\" placeholder=\"%s\" required>
@@ -462,7 +484,7 @@
               </div>
             </div>
           </article>
-          
+
           <div id=\"result\"></div>
         </div>
       </div>
@@ -514,7 +536,7 @@
       </div>
     </div>
   </footer>
-  
+
   <!-- DSFR JavaScript -->
   <script src=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.0/dist/dsfr/dsfr.module.min.js\" type=\"module\"></script>
   <script src=\"https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.0/dist/dsfr/dsfr.nomodule.min.js\" nomodule></script>
@@ -525,6 +547,7 @@
           (:title (:page strings))
           (:heading (:page strings))
           (:subheading (:page strings))
+          base-path               ;; Add base path to form action
           (:email-placeholder (:form strings))
           csrf-token
           (:website-label (:form strings))
@@ -544,13 +567,13 @@
     </div>
     " (case type
         "success" "success"
-        "error" "error"
+        "error"   "error"
         "warning" "warning"
         "info")
-       heading 
-       (if (seq args)
-         (apply format message (map escape-html args))
-         message))))
+            heading
+            (if (seq args)
+              (apply format message (map escape-html args))
+              message))))
 
 (defn debug-result-template [strings type heading-key message & debug-info]
   (format "
@@ -691,7 +714,9 @@
         csrf-token (generate-csrf-token)]
     {:status  200
      :headers {"Content-Type" "text/html"
-               "Set-Cookie"   (format "csrf_token=%s; Path=/; HttpOnly; SameSite=Strict" csrf-token)}
+               "Set-Cookie"   (format "csrf_token=%s; Path=%s; HttpOnly; SameSite=Strict"
+                                      csrf-token
+                                      (if (str/blank? base-path) "/" base-path))}
      :body    (build-index-html strings lang csrf-token)}))
 
 (defn parse-form-data [request]
@@ -893,7 +918,8 @@
   (let [lang       (determine-language req)
         debug-info {:env        {:mailgun-list-id      mailgun-list-id
                                  :mailgun-api-endpoint mailgun-api-endpoint
-                                 :mailgun-api-key      "****"}
+                                 :mailgun-api-key      "****"
+                                 :base-path            base-path}
                     :i18n       {:current-language    (name lang)
                                  :available-languages (keys ui-strings)
                                  :browser-language    (get-in req [:headers "accept-language"])}
@@ -907,13 +933,27 @@
      :headers {"Content-Type" "application/json"}
      :body    (json/generate-string debug-info {:pretty true})}))
 
+;; Function to normalize URI for path matching
+(defn normalize-uri [uri]
+  (let [uri-without-base (if (and (not (str/blank? base-path))
+                                  (str/starts-with? uri base-path))
+                           (let [path (subs uri (count base-path))]
+                             (if (str/blank? path) "/" path))
+                           uri)]
+    (log/debug "Normalized URI from" uri "to" uri-without-base)
+    uri-without-base))
+
 ;; Main app with routes
 (defn app [req]
   (let [uri             (:uri req)
+        normalized-uri  (normalize-uri uri)
         query-params    (parse-query-params uri)
         req-with-params (assoc req :query-params query-params)]
     (try
-      (case [(:request-method req) uri]
+      (log/debug "Processing request:" (:request-method req) uri)
+      (log/debug "Normalized path:" normalized-uri)
+
+      (case [(:request-method req) normalized-uri]
         [:get "/"]           (handle-index req-with-params)
         [:post "/subscribe"] (handle-subscribe req-with-params)
         [:get "/debug"]      (handle-debug req-with-params)
@@ -940,13 +980,14 @@
 (defn start-server [& [port]]
   (let [port (or port 8080)]
     (log/info (str "Starting server on http://localhost:" port))
+    (log/info (str "Base path: " (if (str/blank? base-path) "[root]" base-path)))
     (server/run-server app {:port port})))
 
 ;; Main entry point
 (when (= *file* (System/getProperty "babashka.file"))
   (let [args        *command-line-args*
         ;; Check if first argument is a valid port number
-        port        (if (and (seq args) 
+        port        (if (and (seq args)
                              (try (Integer/parseInt (first args)) true
                                   (catch NumberFormatException _ false)))
                       (Integer/parseInt (first args))
@@ -962,6 +1003,7 @@
                  mailgun-api-key)
       (log/error "Missing environment variable")
       (do (log/info (str "Starting server on http://localhost:" port))
+          (log/info (str "Base path: " (if (str/blank? base-path) "[root]" base-path)))
           (server/run-server app {:port port})
           ;; Keep the server running
           @(promise)))))
