@@ -622,7 +622,6 @@
 (defn error-result [strings message debug-info]
   (debug-result-template strings "error" :operation-failed message debug-info))
 
-;; Updated check-if-subscribed function
 (defn check-if-subscribed [email]
   (log/info "Checking if email is already subscribed:" email)
 
@@ -636,7 +635,6 @@
     (and (not (:error response))
          (= 200 (:status response)))))
 
-;; Updated unsubscribe-from-mailgun function
 (defn unsubscribe-from-mailgun [email]
   (log/info "Attempting to unsubscribe email:" email)
 
@@ -674,7 +672,6 @@
          :debug   {:status (:status response)
                    :body   (:body response)}}))))
 
-;; Updated subscribe-to-mailgun function
 (defn subscribe-to-mailgun [email]
   (log/info "Attempting to subscribe email:" email)
 
