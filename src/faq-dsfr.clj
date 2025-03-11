@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: EPL-2.0.txt
 
-;; ~$ faq-server-dsfr -f https://code.gouv.fr/data/faq.json
+;; ~$ faq-dsfr -f https://code.gouv.fr/data/faq.json
 ;;
 ;; Then check http://localhost:8080
 ;;
@@ -464,7 +464,7 @@
 ;; Show help
 (defn show-help []
   (println "FAQ Web Server - DSFR")
-  (println "Usage: faq-server-dsfr.clj [options]")
+  (println "Usage: faq-dsfr [options]")
   (println (cli/format-opts {:spec cli-options}))
   (System/exit 0))
 

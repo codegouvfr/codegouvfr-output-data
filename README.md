@@ -26,9 +26,9 @@ codegouvfr-output-data.clj:
 
     bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/codegouvfr-output-data.clj
 
-faq-server-dsfr.clj:
+faq-dsfr.clj:
 
-    bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/faq-server-dsfr.clj
+    bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/faq-dsfr.clj
 
 subscribe-dsfr.clj:
 
