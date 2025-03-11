@@ -1,43 +1,83 @@
 #!/usr/bin/env bb
 
-;; This script runs a small web application to let users subscribe to
-;; a Mailgun mailing list.
+;; This script runs a web app to let users subscribe to a Mailgun
+;; mailing list. You need a Mailgun API endpoint, key and the list
+;; identifier.
 ;;
-;; You will need a Mailgun API endpoint, key and the list identifier.
-;;
-;; Store them in environment variables:
-;;
+;; You can store these values in environment variables:
 ;; MAILGUN_LIST_ID (example: "my@list.com")
 ;; MAILGUN_API_ENDPOINT (example "https://api.eu.mailgun.net/v3")
 ;; MAILGUN_API_KEY (example "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxx"
-;; SUBSCRIBE_BASE_PATH (optional, example: "/app" - for subdirectory deployments)
 ;;
-;; Running the web application as http://localhost:8080
-;;
+;; By default, the web application runs as http://localhost:8080:
 ;; ~$ subscribe-dsfr
 ;;
-;; Running it on another port (e.g. http://localhost:4444)
+;; You can also set a base path (e.g. "http://localhost:8080/newsletter") with
+;; SUBSCRIBE_BASE_PATH
 ;;
-;; ~$ subscribe-dsfr 4444
-;;
-;; Reading UI strings from a config.edn file:
-;;
+;; You can use a EDN configuration file for setting more options:
 ;; ~$ subscribe-dsfr --config config.edn
 ;;
-;; See the default value of ui-strings below to see what UI strings
-;; you can configure.
+;; This configuration file can let you override these variables:
+;; - default-language
+;; - ui-strings
+;; - log-min-level
+;; - mailgun-api-endpoint
+;; - mailgun-list-id
+;; - base-path
+;;
+;; Use -h for more information.
 
 (require '[org.httpkit.server :as server]
          '[babashka.http-client :as http]
          '[clojure.string :as str]
          '[cheshire.core :as json]
          '[taoensso.timbre :as log]
-         '[clojure.edn :as edn])
+         '[clojure.edn :as edn]
+         '[babashka.cli :as cli])
 
-;; Default language setting
+(def cli-options
+  {:help      {:alias :h
+               :desc  "             Display this help message"
+               :type  :boolean}
+   :config    {:alias :c
+               :desc  "     Path to configuration file"
+               :ref   "<file>"}
+   :port      {:alias   :p
+               :desc    "       Port number to run the server on"
+               :ref     "<port>"
+               :default 8080
+               :coerce  :int}
+   :list      {:alias :l
+               :desc  "      Mailgun list identifier"
+               :ref   "<email>"}
+   :base-path {:alias :b
+               :desc  "  Base path for deployments in subdirectories"
+               :ref   "<path>"}})
+
+(defn print-usage []
+  (println "Usage: subscribe-dsfr [options]")
+  (println "\nOptions:")
+  (doseq [[k v] cli-options]
+    (println (format "  --%s, -%s %s %s"
+                     (name k)
+                     (name (:alias v))
+                     (or (:ref v) "")
+                     (:desc v))))
+  (println "\nEnvironment variables:")
+  (println "  MAILGUN_LIST_ID          Mailgun list identifier (if not provided with -l)")
+  (println "  MAILGUN_API_ENDPOINT     Mailgun API endpoint")
+  (println "  MAILGUN_API_KEY          Mailgun API key")
+  (println "  SUBSCRIBE_BASE_PATH      Base path for deployments in subdirectories")
+  (println "\nExamples:")
+  (println "  subscribe-dsfr                # Run on default port 8080")
+  (println "  subscribe-dsfr -p 4444        # Run on port 4444")
+  (println "  subscribe-dsfr -c config.edn  # Load configuration from file")
+  (println "  subscribe-dsfr -l my@list.com # Specify list ID directly")
+  (println "  subscribe-dsfr -b /app        # Set base path to /app"))
+
+;; Defaults
 (def default-language :en)
-
-;; Default logging level
 (def log-min-level :info)
 
 ;; Configure Timbre logging
@@ -87,15 +127,15 @@
            "")
          (str/join "/" segments))))
 
-;; Centralized Mailgun Authentication Helper
-(defn get-mailgun-auth-header
-  "Returns the Authorization header value for Mailgun API requests"
-  []
-  (let [auth-string  (str "api:" mailgun-api-key)
-        auth-bytes   (.getBytes auth-string)
-        encoder      (java.util.Base64/getEncoder)
-        encoded-auth (.encodeToString encoder auth-bytes)]
-    (str "Basic " encoded-auth)))
+;; Returns the Authorization header value for Mailgun API requests
+(def get-mailgun-auth-header
+  (memoize
+   (fn []
+     (let [auth-string  (str "api:" mailgun-api-key)
+           auth-bytes   (.getBytes auth-string)
+           encoder      (java.util.Base64/getEncoder)
+           encoded-auth (.encodeToString encoder auth-bytes)]
+       (str "Basic " encoded-auth)))))
 
 ;; Centralized URL construction functions
 (defn get-mailgun-member-url
@@ -145,8 +185,7 @@
 ;; Extract CSRF token from cookies
 (defn extract-csrf-from-cookie [cookies]
   (when-let [cookie-str cookies]
-    (some->> (re-find #"csrf_token=([^;]+)" cookie-str)
-             second)))
+    (some->> (re-find #"csrf_token=([^;]+)" cookie-str) second)))
 
 ;; UI Strings with internationalization (i18n) support
 (def ui-strings
@@ -231,15 +270,56 @@
 
 ;; Function to validate the configuration data
 (defn validate-config [config-data]
-  (cond
-    (not (map? config-data))
-    (do (log/error "Invalid configuration: expected a map")
-        false)
-    (and (:ui-strings config-data)
-         (not (map? (:ui-strings config-data))))
-    (do (log/error "Invalid configuration: ui-strings should be a map")
-        false)
-    :else true))
+  (let [and-not   #(when-let [r (get config-data %1)] (not (apply %2 [r])))
+        log-false #(do (log/error %) false)]
+    (cond
+      (not (map? config-data))
+      (log-false "Invalid configuration: expected a map")
+      ;; (when-let [r (get config-data :ui-strings)] (not (apply map? [r])))
+      (and-not :ui-strings map?)
+      (log-false "Invalid configuration: ui-strings should be a map")
+      (and-not :default-language keyword?)
+      (log-false "Invalid configuration: default-language should be a keyword")
+      (and-not :log-min-level keyword?)
+      (log-false "Invalid configuration: log-min-level should be a keyword")
+      (and-not :mailgun-list-id string?)
+      (log-false "Invalid configuration: mailgun-list-id should be a string")
+      (and-not :mailgun-api-endpoint string?)
+      (log-false "Invalid configuration: mailgun-api-endpoint should be a string")
+      (and-not :mailgun-api-key string?)
+      (log-false "Invalid configuration: mailgun-api-key should be a string")
+      (and-not :base-path string?)
+      (log-false "Invalid configuration: base-path should be a string")
+      :else true)))
+
+(defn apply-config-overrides! [config-data]
+  ;; Override default-language if specified
+  (when-let [lang (:default-language config-data)]
+    (alter-var-root #'default-language (constantly lang))
+    (log/info "Overriding default-language from config:" lang))
+  ;; Override log-min-level if specified
+  (when-let [level (:log-min-level config-data)]
+    (alter-var-root #'log-min-level (constantly level))
+    ;; Update logging configuration with new level
+    (log/merge-config! {:min-level level})
+    (log/info "Overriding log-min-level from config:" level))
+  ;; Override mailgun-list-id if specified
+  (when-let [list (:mailgun-list-id config-data)]
+    (alter-var-root #'mailgun-list-id (constantly list))
+    (log/info "Overriding mailgun-list-id from config:" list))
+  ;; Override mailgun-api-endpoint if specified
+  (when-let [endpoint (:mailgun-api-endpoint config-data)]
+    (alter-var-root #'mailgun-api-endpoint (constantly endpoint))
+    (log/info "Overriding mailgun-api-endpoint from config:" endpoint))
+  ;; Override mailgun-api-key if specified
+  (when-let [key (:mailgun-api-key config-data)]
+    (alter-var-root #'mailgun-api-key (constantly key))
+    (log/info "Overriding mailgun-api-key from config:" "****"))
+  (when-let [path (:base-path config-data)]
+    (alter-var-root #'base-path (constantly (if (str/ends-with? path "/")
+                                              (str/replace path #"/$" "")
+                                              path)))
+    (log/info "Overriding base-path from config:" path)))
 
 ;; Function to merge UI strings from configuration with defaults
 ;; This gives precedence to config file values
@@ -255,13 +335,14 @@
       (log/info "Merged UI strings from configuration file"))
     (log/info "No UI strings found in configuration file")))
 
-;; Process configuration file
 (defn process-config-file [file-path]
   (when file-path
     (log/info "Using configuration file:" file-path)
     (let [config-data (read-config-file file-path)]
       (when (validate-config config-data)
-        (merge-ui-strings! config-data)))))
+        ;; Apply both UI string merging and variable overrides
+        (merge-ui-strings! config-data)
+        (apply-config-overrides! config-data)))))
 
 ;; Extract the config path from command-line arguments
 (defn extract-config-path [args]
@@ -624,14 +705,11 @@
 
 (defn check-if-subscribed [email]
   (log/info "Checking if email is already subscribed:" email)
-
   (let [url      (get-mailgun-member-url email)
         _        (log/debug "Making request to check subscription status:" url)
         response (make-mailgun-request :get url nil)]
-
     (log/debug "Mailgun API check response status:" (:status response))
     (log/debug "Mailgun API check response body:" (:body response))
-
     (and (not (:error response))
          (= 200 (:status response)))))
 
@@ -680,7 +758,6 @@
 
 (defn subscribe-to-mailgun [email]
   (log/info "Attempting to subscribe email:" email)
-
   (let [url         (get-mailgun-members-url)
         body-params (format "address=%s&subscribed=yes&upsert=yes"
                             (java.net.URLEncoder/encode email "UTF-8"))
@@ -712,13 +789,23 @@
          :debug   {:status (:status response)
                    :body   (:body response)}}))))
 
+;; Function to normalize URI for path matching
+(defn normalize-uri [uri]
+  (let [uri-without-base (if (and (not (str/blank? base-path))
+                                  (str/starts-with? uri base-path))
+                           (let [path (subs uri (count base-path))]
+                             (if (str/blank? path) "/" path))
+                           uri)]
+    (log/debug "Normalized URI from" uri "to" uri-without-base)
+    uri-without-base))
+
 ;; Request handlers
 (defn handle-index [req]
   (let [lang       (determine-language req)
         strings    (get-strings lang)
         csrf-token (generate-csrf-token)]
     {:status  200
-     :headers {"Content-Type" "text/html"
+     :headers {"Content-Type" "text/html; charset=UTF-8"
                "Set-Cookie"   (format "csrf_token=%s; Path=%s; HttpOnly; SameSite=Strict"
                                       csrf-token
                                       (if (str/blank? base-path) "/" base-path))}
@@ -732,7 +819,6 @@
       (try
         (let [body (slurp body-stream)]
           (log/debug "Raw body content:" body)
-
           ;; Parse the body in the most robust way possible
           (let [result (reduce (fn [acc pair]
                                  (if-let [[_ k v] (re-matches #"([^=]+)=(.*)" pair)]
@@ -748,7 +834,6 @@
             result))
         (catch Throwable t (log/error "Error reading body:" (str t)) {}))
       (do (log/debug "No body in request") {}))
-
     (catch Throwable t
       (log/error "Top-level error in parse-form-data:" (str t))
       (log/error "Stack trace:" (with-out-str (.printStackTrace t)))
@@ -776,7 +861,6 @@
   (log/info "Received subscription request")
   (log/debug "Request method:" (:request-method req))
   (log/debug "Headers:" (pr-str (:headers req)))
-
   (try
     (let [form-data         (parse-form-data req)
           email             (-> (:email form-data) str/trim str/lower-case)
@@ -802,7 +886,7 @@
           (log/warn "Form token:" form-csrf-token)
           (log/warn "Cookie token:" cookie-csrf-token)
           {:status  403
-           :headers {"Content-Type" "text/html"}
+           :headers {"Content-Type" "text/html; charset=UTF-8"}
            :body    (csrf-invalid-result strings)})
 
         ;; Anti-spam: rate limiting
@@ -810,7 +894,7 @@
           (do
             (log/warn "Rate limit exceeded for IP:" client-ip)
             {:status  429
-             :headers {"Content-Type" "text/html"
+             :headers {"Content-Type" "text/html; charset=UTF-8"
                        "Retry-After"  "3600"}
              :body    (rate-limit-result strings)})
 
@@ -819,7 +903,7 @@
             (do
               (log/warn "Spam detected: honeypot field filled from IP:" client-ip)
               {:status  400
-               :headers {"Content-Type" "text/html"}
+               :headers {"Content-Type" "text/html; charset=UTF-8"}
                :body    (spam-detected-result strings)})
 
             ;; Email validation
@@ -829,7 +913,7 @@
                 (log/error "No email provided in request")
                 (log/error "Form data:" (pr-str form-data))
                 {:status  400
-                 :headers {"Content-Type" "text/html"}
+                 :headers {"Content-Type" "text/html; charset=UTF-8"}
                  :body    (error-result
                            strings
                            (get-in strings [:messages :no-email])
@@ -842,7 +926,7 @@
               (do
                 (log/error "Invalid email format:" email)
                 {:status  400
-                 :headers {"Content-Type" "text/html"}
+                 :headers {"Content-Type" "text/html; charset=UTF-8"}
                  :body    (invalid-email-result strings email)})
 
               ;; Valid request, proceed with normal handling
@@ -853,17 +937,17 @@
                   (do
                     (log/info "Email already subscribed:" email)
                     {:status  200
-                     :headers {"Content-Type" "text/html"}
+                     :headers {"Content-Type" "text/html; charset=UTF-8"}
                      :body    (already-subscribed-result strings email)})
 
                   ;; If not subscribed, proceed with subscription
                   (let [result (subscribe-to-mailgun email)]
                     (if (:success result)
                       {:status  200
-                       :headers {"Content-Type" "text/html"}
+                       :headers {"Content-Type" "text/html; charset=UTF-8"}
                        :body    (success-result strings email)}
                       {:status  400
-                       :headers {"Content-Type" "text/html"}
+                       :headers {"Content-Type" "text/html; charset=UTF-8"}
                        :body    (error-result
                                  strings
                                  (or (:message result) (get-in strings [:messages :server-error]))
@@ -874,21 +958,21 @@
                   (do
                     (log/info "Email not subscribed, can't unsubscribe:" email)
                     {:status  200 ; Changed from 404 to 200 for better user experience
-                     :headers {"Content-Type" "text/html"}
+                     :headers {"Content-Type" "text/html; charset=UTF-8"}
                      :body    (not-subscribed-result strings email)})
 
                   ;; If subscribed, proceed with unsubscription
                   (let [result (unsubscribe-from-mailgun email)]
                     (if (:success result)
                       {:status  200
-                       :headers {"Content-Type" "text/html"}
+                       :headers {"Content-Type" "text/html; charset=UTF-8"}
                        :body    (unsubscribed-result strings email)}
                       (if (:not_found result)
                         {:status  200 ; Changed from 404 to 200 for better user experience
-                         :headers {"Content-Type" "text/html"}
+                         :headers {"Content-Type" "text/html; charset=UTF-8"}
                          :body    (not-subscribed-result strings email)}
                         {:status  400
-                         :headers {"Content-Type" "text/html"}
+                         :headers {"Content-Type" "text/html; charset=UTF-8"}
                          :body    (error-result
                                    strings
                                    (or (:message result) (get-in strings [:messages :server-error]))
@@ -898,7 +982,7 @@
                 (do
                   (log/error "Unknown action requested:" action)
                   {:status  400
-                   :headers {"Content-Type" "text/html"}
+                   :headers {"Content-Type" "text/html; charset=UTF-8"}
                    :body    (error-result
                              strings
                              (get-in strings [:messages :unknown-action])
@@ -910,7 +994,7 @@
       (let [lang    (determine-language req)
             strings (get-strings lang)]
         {:status  500
-         :headers {"Content-Type" "text/html"}
+         :headers {"Content-Type" "text/html; charset=UTF-8"}
          :body    (error-result
                    strings
                    (get-in strings [:messages :server-error])
@@ -935,18 +1019,8 @@
                                  :max-requests  max-requests-per-window
                                  :current-log   (count @ip-request-log)}}]
     {:status  200
-     :headers {"Content-Type" "application/json"}
+     :headers {"Content-Type" "application/json; charset=UTF-8"}
      :body    (json/generate-string debug-info {:pretty true})}))
-
-;; Function to normalize URI for path matching
-(defn normalize-uri [uri]
-  (let [uri-without-base (if (and (not (str/blank? base-path))
-                                  (str/starts-with? uri base-path))
-                           (let [path (subs uri (count base-path))]
-                             (if (str/blank? path) "/" path))
-                           uri)]
-    (log/debug "Normalized URI from" uri "to" uri-without-base)
-    uri-without-base))
 
 ;; Main app with routes
 (defn app [req]
@@ -957,7 +1031,6 @@
     (try
       (log/debug "Processing request:" (:request-method req) uri)
       (log/debug "Normalized path:" normalized-uri)
-
       (case [(:request-method req) normalized-uri]
         [:get "/"]           (handle-index req-with-params)
         [:post "/subscribe"] (handle-subscribe req-with-params)
@@ -965,7 +1038,7 @@
         (do
           (log/info "Not found:" (:request-method req) uri)
           {:status  404
-           :headers {"Content-Type" "text/html"}
+           :headers {"Content-Type" "text/html; charset=UTF-8"}
            :body    (format "<h1>%s</h1><p>%s: %s %s</p>"
                             "Not Found"
                             "Resource not found"
@@ -975,13 +1048,12 @@
         (log/error "Uncaught exception in request handler:" (str e))
         (log/error "Stack trace:" (with-out-str (.printStackTrace e)))
         {:status  500
-         :headers {"Content-Type" "text/html"}
+         :headers {"Content-Type" "text/html; charset=UTF-8"}
          :body    (str "<h1>Internal Server Error</h1><pre>"
                        (.getMessage e) "\n\n"
                        (with-out-str (.printStackTrace e))
                        "</pre>")}))))
 
-;; Start server
 (defn start-server [& [port]]
   (let [port (or port 8080)]
     (log/info (str "Starting server on http://localhost:" port))
@@ -990,25 +1062,28 @@
 
 ;; Main entry point
 (when (= *file* (System/getProperty "babashka.file"))
-  (let [args        *command-line-args*
-        ;; Check if first argument is a valid port number
-        port        (if (and (seq args)
-                             (try (Integer/parseInt (first args)) true
-                                  (catch NumberFormatException _ false)))
-                      (Integer/parseInt (first args))
-                      8080)
-        config-path (extract-config-path args)]
-
+  (let [opts        (cli/parse-opts *command-line-args* {:spec cli-options})
+        port        (get opts :port 8080)
+        config-path (:config opts)
+        list        (:list opts)
+        path        (:base-path opts)]
+    ;; Handle help option
+    (when (:help opts)
+      (print-usage)
+      (System/exit 0))
+    ;; Set list from command line if provided
+    (when list
+      (alter-var-root #'mailgun-list-id (constantly list))
+      (log/info "Setting mailgun-list-id from command line:" list))
+    ;; Set base-path from command line if provided
+    (when path
+      (alter-var-root #'base-path (constantly path))
+      (log/info "Setting base-path from command line:" path))
     ;; Process configuration file if provided
-    (when config-path
-      (process-config-file config-path))
-
-    (if-not (and mailgun-list-id
-                 mailgun-api-endpoint
-                 mailgun-api-key)
-      (log/error "Missing environment variable")
-      (do (log/info (str "Starting server on http://localhost:" port))
-          (log/info (str "Base path: " (if (str/blank? base-path) "[root]" base-path)))
-          (server/run-server app {:port port})
-          ;; Keep the server running
-          @(promise)))))
+    (when config-path (process-config-file config-path))
+    ;; Start the server
+    (log/info (str "Starting server on http://localhost:" port))
+    (log/info (str "Base path: " (if (str/blank? base-path) "[root]" base-path)))
+    (server/run-server app {:port port})
+    ;; Keep the server running
+    @(promise)))
