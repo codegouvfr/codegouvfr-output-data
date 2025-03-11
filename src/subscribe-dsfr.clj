@@ -672,6 +672,12 @@
          :debug   {:status (:status response)
                    :body   (:body response)}}))))
 
+(def subscription-count (atom 0))
+(defn warn-new-subscription! []
+  (let [new-count (swap! subscription-count inc)]
+    (when (zero? (mod new-count 10))
+      (log/info (format "%d new subscriptions" new-count)))))
+
 (defn subscribe-to-mailgun [email]
   (log/info "Attempting to subscribe email:" email)
 
@@ -693,6 +699,7 @@
 
       (< (:status response) 300)
       (do
+        (warn-new-subscription!)
         (log/info "Successfully subscribed email:" email)
         {:success true})
 
