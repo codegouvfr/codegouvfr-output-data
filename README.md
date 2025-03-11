@@ -22,11 +22,17 @@ This should take care of installing all you need:
 
 # Installation
 
-Once `bbin` is installed in your environment, run this in a terminal:
+codegouvfr-output-data.clj:
 
-- `bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/codegouvfr-output-data.clj`
-- `bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/faq-server-dsfr.clj`
-- `bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/subscribe-dsfr.clj`
+    bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/codegouvfr-output-data.clj
+
+faq-server-dsfr.clj:
+
+    bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/faq-server-dsfr.clj
+
+subscribe-dsfr.clj:
+
+    bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/subscribe-dsfr.clj
 
 # [Contributing](CONTRIBUTING.md)
 
