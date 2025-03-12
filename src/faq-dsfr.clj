@@ -421,6 +421,11 @@
          :body    (dsfr-page-layout
                    "Accueil" (home-content faq-data))}
 
+        [:get "/robots.txt"]
+        {:status  200
+         :headers {"Content-Type" "text/plain"}
+         :body    "User-agent: *\nAllow: /\n"}
+
         [:get "/category"]
         (let [category-name (:name params)
               category-faqs (get-faqs-by-category category-name faq-data)]
