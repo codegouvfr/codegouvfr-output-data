@@ -83,7 +83,7 @@
   (when s
     (try
       (java.net.URLDecoder/decode s "UTF-8")
-      (catch Exception e
+      (catch Exception _
         (println "Warning: Error decoding URL parameter:" s)
         s))))  ;; Return original on error
 
