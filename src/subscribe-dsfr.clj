@@ -1022,6 +1022,11 @@
      :headers {"Content-Type" "application/json; charset=UTF-8"}
      :body    (json/generate-string debug-info {:pretty true})}))
 
+(defn handle-robots-txt []
+  {:status  200
+   :headers {"Content-Type" "text/plain; charset=UTF-8"}
+   :body    "User-agent: *\nDisallow: /"})
+
 ;; Main app with routes
 (defn app [req]
   (let [uri             (:uri req)
@@ -1035,6 +1040,7 @@
         [:get "/"]           (handle-index req-with-params)
         [:post "/subscribe"] (handle-subscribe req-with-params)
         [:get "/debug"]      (handle-debug req-with-params)
+        [:get "/robots.txt"] (handle-robots-txt)
         (do
           (log/info "Not found:" (:request-method req) uri)
           {:status  404
