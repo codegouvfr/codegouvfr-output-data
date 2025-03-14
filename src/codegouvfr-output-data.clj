@@ -84,15 +84,13 @@
 
 (defn- get-publiccode-url [^String awesome-repo]
   (let [{:keys [html_url full_name default_branch platform]}
-        (get-repo-properties awesome-repo)]
-    (when-let [prefix-url
-               (condp = platform
-                 "github.com" (format "https://raw.githubusercontent.com/%s/%s/"
-                                      full_name default_branch)
-                 "git.sr.ht"  (format "%s/blob/%s/" html_url default_branch)
-                 "gitlab.com" (format "%s/-/raw/%s/" html_url default_branch)
-                 nil)]
-      (str prefix-url "publiccode.yml"))))
+        (get-repo-properties awesome-repo)
+        platform-prefixes
+        {"github.com" #(format "https://raw.githubusercontent.com/%s/%s/" %1 %2)
+         "git.sr.ht"  #(format "%s/blob/%s/" %1 %2)
+         "gitlab.com" #(format "%s/-/raw/%s/" %1 %2)}]
+    (when-let [prefix-fn (get platform-prefixes platform)]
+      (str (prefix-fn full_name default_branch) "publiccode.yml"))))
 
 (def owners-keys-mapping
   {:a  :location
@@ -248,19 +246,20 @@
                         urls))]
     (doall (map (comp :body deref) data))))
 
-(defn- get-urls-json [urls & [msg]]
+(defn- get-urls-with-parser [urls parser-fn & [msg]]
   (when msg (log/info msg))
   (when-let [data (get-urls urls)]
     (flatten
-     (map #(try (json/parse-string % true)
+     (map #(try (parser-fn %)
                 (catch Exception _
-                  (log/error "Failed to fetch json data")))
+                  (log/error "Failed to parse data")))
           data))))
 
+(defn- get-urls-json [urls & [msg]]
+  (get-urls-with-parser urls #(json/parse-string % true) msg))
+
 (defn- get-urls-yaml [urls & [msg]]
-  (when msg (log/info msg))
-  (when-let [data (get-urls urls)]
-    (flatten (map #(yaml/parse-string % :keywords false) data))))
+  (get-urls-with-parser urls #(yaml/parse-string % :keywords false) msg))
 
 (defn- fetch-yaml [url]
   (log/info "Fetching yaml data from" url)
@@ -288,8 +287,8 @@
 
 ;;; Set annuaire, hosts, owners, repositories and public forges
 
-(defn- get-name-from-annuaire-id [^String id]
-  (:nom (get @annuaire id)))
+(def get-name-from-annuaire-id
+  (memoize (fn [^String id] (:nom (get @annuaire id)))))
 
 (defn- add-service-sup! []
   (log/info "Adding service_sup...")
