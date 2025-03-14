@@ -18,10 +18,12 @@
 ;;; Define CLI options
 
 (def cli-options
-  {:help {:alias :h
-          :desc  "Display this help message"}
-   :test {:alias :t
-          :desc  "Test with a limited number of hosts (2 by default)"}})
+  {:help  {:alias :h
+           :desc  "Display this help message"}
+   :test  {:alias :t
+           :desc  "Test with a limited number of hosts (2 by default)"}
+   :forge {:alias :f
+           :desc  "Limit to a specific forge (e.g., 'github.com')"}})
 
 (defn- show-help
   []
@@ -334,10 +336,18 @@
 (defn- set-hosts! []
   (when-let [res (fetch-json (:hosts urls))]
     (reset! hosts
-            (if-let [test-opt (:test @cli-opts)]
-              (take (if (int? test-opt) test-opt 2)
+            (cond
+              ;; Filter by specific host if host option is provided
+              (:host @cli-opts)
+              (filter #(= (if (= (:name %) "GitHub") "github.com" (:name %))
+                          (:host @cli-opts))
+                      res)
+              ;; Use test option if provided
+              (:test @cli-opts)
+              (take (if (int? (:test @cli-opts)) (:test @cli-opts) 2)
                     (shuffle res))
-              res))))
+              ;; Otherwise use all hosts
+              :else res))))
 
 (defn- update-owners! []
   (doseq [[f forge-data] @forges]
@@ -718,9 +728,9 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
 (defn- display-data! []
   (log/info "Hosts:" (count @hosts))
   (log/info "Owners:" (count @owners))
-  (log/info "Owners (limited):" (count (owners-as-map @owners)))
+  (log/info "Owners (expurged):" (count (owners-as-map @owners)))
   (log/info "Repositories:" (count @repositories))
-  (log/info "Repositories (limited):" (count (repositories-as-map @repositories)))
+  (log/info "Repositories (expurged):" (count (repositories-as-map @repositories)))
   (when-not (:test @cli-opts)
     (log/info "Awesome codegouvfr:" (count @awesome))))
 
