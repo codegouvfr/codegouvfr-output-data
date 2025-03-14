@@ -1,10 +1,13 @@
-[![img](https://img.shields.io/badge/code.gouv.fr-contributif-blue.svg)](https://code.gouv.fr/documentation/#/publier)
+[![img](https://img.shields.io/badge/code.gouv.fr-contributif-blue.svg)](https://code.gouv.fr/documentation/#quels-degres-douverture-pour-les-codes-sources)
 [![Software License](https://img.shields.io/badge/Licence-EPL.svg)](https://githut.com/codegouvfr/codegouvfr-cli/tree/main/item/LICENSES/LICENSE.EPL-2.0.txt)
 
 # Presentation
 
-This repository contains various scripts related to
-[code.gouv.fr](https://code.gouv.fr.)
+This repository contains various scripts related to [code.gouv.fr](https://code.gouv.fr):
+
+- `faq-dsfr.clj` to deploy a FAQ - see [code.gouv.fr/faq](https://code.gouv.fr/faq)
+- `subscribe-dsfr.clj` to deploy a ML subscription page - see [code.gouv.fr/infolettre](https://code.gouv.fr/infolettre/)
+- `codegouvfr-output-data.clj` to collect and output data from [ecosystem.code.gouv.fr](https://ecosystem.code.gouv.fr)
 
 # Prerequisites
 
