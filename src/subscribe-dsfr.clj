@@ -274,7 +274,7 @@
      :confirmation-error                          "Confirmation error"
      :confirmation-error-message                  "The confirmation link is invalid or has expired. Please try subscribing again."
      :confirmation-email-failed                   "Confirmation email could not be sent"
-     :confirmation-email-failed-message           "We couldn't send a confirmation email to <strong>%s</strong>. Please try again later or contact the administrator."
+     :confirmation-email-failed-message           "We couldn't send a confirmation email to <strong>%s</strong>. Please try again later."
      :tokens                                      "Available confirmation tokens"
      :tokens-message                              "Currently there are %s pending confirmation tokens."
      :subscription-confirmation-success           "Subscription confirmed"
@@ -300,11 +300,11 @@
      :unsubscribe-button "Désabonnement"}
     :messages
     {:back-to-subscription                        "Retour à l'accueil"
-     :thank-you                                   "Merci !"
+     :thank-you                                   "Merci !"
      :success-subscribe                           "Votre adresse e-mail <strong>%s</strong> a été abonnée avec succès."
      :already-subscribed                          "Déjà abonné"
      :already-subscribed-message                  "L'adresse e-mail <strong>%s</strong> est déjà abonnée."
-     :not-subscribed                              "Attention : non abonné"
+     :not-subscribed                              "Attention : non abonné"
      :not-subscribed-message                      "L'adresse e-mail <strong>%s</strong> n'est pas actuellement abonnée. Aucune action n'a été effectuée."
      :operation-failed                            "Échec de l'opération"
      :no-email                                    "Aucune adresse e-mail fournie. Veuillez réessayer."
@@ -319,13 +319,13 @@
      :unknown-action                              "Action inconnue demandée. Veuillez réessayer."
      :server-error                                "Une erreur inattendue s'est produite. Veuillez réessayer plus tard."
      :confirmation-sent                           "Email de confirmation envoyé"
-     :confirmation-sent-message                   "Un email de confirmation a été envoyé à <strong>%s</strong>. Veuillez vérifier votre boîte de réception et cliquer sur le lien de confirmation pour finaliser votre abonnement."
+     :confirmation-sent-message                   "Un email de confirmation a été envoyé à <strong>%s</strong>.<br/>Veuillez vérifier votre boîte de réception et cliquer sur le lien de confirmation pour finaliser votre abonnement."
      :confirmation-success                        "Abonnement confirmé"
-     :confirmation-success-message                "Votre abonnement a été confirmé. Merci de vous être abonné !"
+     :confirmation-success-message                "Votre abonnement a été confirmé. Merci de vous être abonné !"
      :confirmation-error                          "Erreur de confirmation"
      :confirmation-error-message                  "Le lien de confirmation n'est pas valide ou a expiré. Veuillez essayer de vous abonner à nouveau."
-     :confirmation-email-failed                   "L'email de confirmation n'a pas pu être envoyé"
-     :confirmation-email-failed-message           "Nous n'avons pas pu envoyer un email de confirmation à <strong>%s</strong>. Veuillez réessayer plus tard ou contacter l'administrateur."
+     :confirmation-email-failed                   "L'email de confirmation n'a pas pu être envoyé."
+     :confirmation-email-failed-message           "Nous n'avons pas pu envoyer un email de confirmation à <strong>%s</strong>. Veuillez réessayer plus tard."
      :tokens                                      "Jetons de confirmation disponibles"
      :tokens-message                              "Il y a actuellement %s jetons de confirmation en attente."
      :subscription-confirmation-success           "Abonnement confirmé"
@@ -335,11 +335,11 @@
      :unsubscription-confirmation-success-message "Votre demande de désabonnement pour <strong>%s</strong> a été traitée."}
     :emails
     {:subscription-confirm-subject   "[%s] Veuillez confirmer votre abonnement"
-     :subscription-confirm-body-text "Merci de vous être abonné à notre liste de diffusion avec votre adresse e-mail : %s.\n\nVeuillez confirmer votre abonnement en cliquant sur le lien suivant :\n\n%s\n\nSi vous n'avez pas demandé cet abonnement, vous pouvez ignorer cet e-mail."
-     :subscription-confirm-body-html "<html><body><p>Merci de vous être abonné à notre liste de diffusion avec votre adresse e-mail : <strong>%s</strong>.</p><p>Veuillez confirmer votre abonnement en cliquant sur le lien suivant :</p><p><a href=\"%s\">Confirmer votre abonnement</a></p><p>Si vous n'avez pas demandé cet abonnement, vous pouvez ignorer cet e-mail.</p></body></html>"
+     :subscription-confirm-body-text "Merci de vous être abonné à notre liste de diffusion avec votre adresse e-mail : %s.\n\nVeuillez confirmer votre abonnement en cliquant sur le lien suivant :\n\n%s\n\nSi vous n'avez pas demandé cet abonnement, vous pouvez ignorer cet e-mail."
+     :subscription-confirm-body-html "<html><body><p>Merci de vous être abonné à notre liste de diffusion avec votre adresse e-mail : <strong>%s</strong>.</p><p>Veuillez confirmer votre abonnement en cliquant sur le lien suivant :</p><p><a href=\"%s\">Confirmer votre abonnement</a></p><p>Si vous n'avez pas demandé cet abonnement, vous pouvez ignorer cet e-mail.</p></body></html>"
      :unsubscribe-confirm-subject    "[%s] Veuillez confirmer votre désabonnement"
-     :unsubscribe-confirm-body-text  "Vous avez demandé à vous désabonner de notre liste de diffusion avec l'adresse e-mail : %s.\n\nVeuillez confirmer votre désabonnement en cliquant sur le lien suivant :\n\n%s\n\nSi vous n'avez pas demandé ce désabonnement, vous pouvez ignorer cet e-mail."
-     :unsubscribe-confirm-body-html  "<html><body><p>Vous avez demandé à vous désabonner de notre liste de diffusion avec l'adresse e-mail : <strong>%s</strong>.</p><p>Veuillez confirmer votre désabonnement en cliquant sur le lien suivant :</p><p><a href=\"%s\">Confirmer votre désabonnement</a></p><p>Si vous n'avez pas demandé ce désabonnement, vous pouvez ignorer cet e-mail.</p></body></html>"}}})
+     :unsubscribe-confirm-body-text  "Vous avez demandé à vous désabonner de notre liste de diffusion avec l'adresse e-mail : %s.\n\nVeuillez confirmer votre désabonnement en cliquant sur le lien suivant :\n\n%s\n\nSi vous n'avez pas demandé ce désabonnement, vous pouvez ignorer cet e-mail."
+     :unsubscribe-confirm-body-html  "<html><body><p>Vous avez demandé à vous désabonner de notre liste de diffusion avec l'adresse e-mail : <strong>%s</strong>.</p><p>Veuillez confirmer votre désabonnement en cliquant sur le lien suivant :</p><p><a href=\"%s\">Confirmer votre désabonnement</a></p><p>Si vous n'avez pas demandé ce désabonnement, vous pouvez ignorer cet e-mail.</p></body></html>"}}})
 
 (def app-config
   (atom {:mailgun-list-id      (System/getenv "MAILGUN_LIST_ID")
