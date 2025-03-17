@@ -53,7 +53,7 @@
 ;;
 ;; ~$ subscribe -h # Show more information
 
-(def version "0.5.0")
+(def version "0.5.1")
 
 (require '[org.httpkit.server :as server]
          '[babashka.http-client :as http]
@@ -1069,8 +1069,7 @@
       :show-back-link show-back-link})))
 
 (defn result-template [strings type message-key & args]
-  (let [lang     (keyword (or (first (filter keyword? args)) :en))
-        heading  (get-in strings [:messages message-key])
+  (let [heading  (get-in strings [:messages message-key])
         message  (get-in strings [:messages (keyword (str (name message-key) "-message"))])
         msg-args (filter string? args)]
     (format "
@@ -1090,9 +1089,8 @@
               (apply format message (map escape-html msg-args))
               message))))
 
-(defn debug-result-template [strings type message & debug-info]
-  (let [lang      (or (first (filter keyword? debug-info)) :en)
-        debug-str (when (seq debug-info)
+(defn debug-result-template [type message & debug-info]
+  (let [debug-str (when (seq debug-info)
                     (str "\n\nDebug Info:\n" (escape-html (str (remove keyword? debug-info)))))]
     (format "
     <div id=\"result\">
@@ -1107,9 +1105,9 @@
         "error"   "error"
         "warning" "warning"
         "info")
-       message
-       (escape-html message)
-       debug-str)))
+            message
+            (escape-html message)
+            debug-str)))
 
 (def base-security-headers
   {"X-Content-Type-Options" "nosniff"
@@ -1318,7 +1316,7 @@
         (catch Exception e
           (log/error "Form parsing error:" (.getMessage e)))))))
 
-(defn parse-query-params [uri]
+(defn parse-query-params-0 [uri]
   (try
     (when (and uri (string? uri) (str/includes? uri "?"))
       (let [query-string (second (str/split uri #"\?"))]
@@ -1349,26 +1347,26 @@
       (log/error "Error parsing query params:" t)
       (log/error "URI that caused error:" uri))))
 
-(defn enhanced-parse-query-params [req]
+(defn parse-query-params [req]
   (try
     (let [existing-params (:query-params req)
           uri             (get req :uri "")
-          uri-params      (parse-query-params uri)]
+          uri-params      (parse-query-params-0 uri)]
       (log/debug "Existing params in request:" (pr-str existing-params))
       (log/debug "URI-parsed params:" (pr-str uri-params))
       (cond
-        ;; Use existing params if available
-        (and existing-params (not-empty existing-params))
+        ;; Use existing params if available (ensure it's a collection first)
+        (and existing-params (map? existing-params) (not-empty existing-params))
         existing-params
         ;; Next try URI params
-        (not-empty uri-params)
+        (and uri-params (map? uri-params) (not-empty uri-params))
         uri-params
         ;; Finally, try to extract from query-string directly
         :else
         (let [query-string (get req :query-string)]
           (when (and query-string (not (str/blank? query-string)))
             (log/debug "Trying query-string directly:" query-string)
-            (let [params (parse-query-params (str "?" query-string))]
+            (let [params (parse-query-params-0 (str "?" query-string))]
               (log/debug "Parsed from query-string:" (pr-str params))
               params)))))
     (catch Throwable t
@@ -1539,7 +1537,7 @@
 (defn app [req]
   (let [uri             (:uri req)
         normalized-uri  (normalize-uri uri)
-        query-params    (enhanced-parse-query-params req)
+        query-params    (parse-query-params req)
         req-with-params (assoc req :query-params query-params)]
     (try
       (log/debug "Processing request:" (:request-method req) uri)
