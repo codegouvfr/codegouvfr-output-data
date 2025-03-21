@@ -3,14 +3,11 @@
 
 # Presentation
 
-This repository contains various scripts related to [code.gouv.fr](https://code.gouv.fr):
-
-- `subscribe-dsfr.clj` to deploy a ML subscription page - see [code.gouv.fr/infolettre](https://code.gouv.fr/infolettre/)
-- `codegouvfr-output-data.clj` to collect and output data from [ecosystem.code.gouv.fr](https://ecosystem.code.gouv.fr)
+This repository contains `codegouvfr-output-data.clj`, a script to collect and output data from [ecosystem.code.gouv.fr](https://ecosystem.code.gouv.fr).
 
 # Prerequisites
 
-The scripts are written in [Clojure](https://clojure.org) with
+It is written in [Clojure](https://clojure.org) with
 [Babashka](https://babashka.org) and we recommend installing them with
 [bbin](https://github.com/babashka/bbin).
 
@@ -24,16 +21,9 @@ This should take care of installing all you need:
 
 # Installation
 
-codegouvfr-output-data.clj:
-
-    bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/codegouvfr-output-data.clj
-
-subscribe-dsfr.clj:
-
-    bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/subscribe-dsfr.clj
+    bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/codegouvfr-output-data.clj
 
 # [Contributing](CONTRIBUTING.md)
-
 # Support the Clojure(script) ecosystem
 
 If you like Clojure(script), you can support the ecosystem by making a donation to [clojuriststogether.org](https://www.clojuriststogether.org).
