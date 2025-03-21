@@ -5,7 +5,6 @@
 
 This repository contains various scripts related to [code.gouv.fr](https://code.gouv.fr):
 
-- `faq-dsfr.clj` to deploy a FAQ - see [code.gouv.fr/faq](https://code.gouv.fr/faq)
 - `subscribe-dsfr.clj` to deploy a ML subscription page - see [code.gouv.fr/infolettre](https://code.gouv.fr/infolettre/)
 - `codegouvfr-output-data.clj` to collect and output data from [ecosystem.code.gouv.fr](https://ecosystem.code.gouv.fr)
 
@@ -29,10 +28,6 @@ codegouvfr-output-data.clj:
 
     bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/codegouvfr-output-data.clj
 
-faq-dsfr.clj:
-
-    bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/faq-dsfr.clj
-
 subscribe-dsfr.clj:
 
     bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/src/subscribe-dsfr.clj
@@ -43,7 +38,7 @@ subscribe-dsfr.clj:
 
 If you like Clojure(script), you can support the ecosystem by making a donation to [clojuriststogether.org](https://www.clojuriststogether.org).
 
-# Licence
+# License
 
 2023-2025 DINUM, Bastien Guerry.
 
