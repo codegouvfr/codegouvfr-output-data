@@ -21,7 +21,7 @@ This should take care of installing all you need:
 
 # Installation
 
-    bbin install https://raw.githubusercontent.com/codegouvfr/codegouvfr-cli/refs/heads/main/codegouvfr-output-data.clj
+    bbin install io.github.codegouvfr/codegouvfr-output-data
 
 # [Contributing](CONTRIBUTING.md)
 # Support the Clojure(script) ecosystem

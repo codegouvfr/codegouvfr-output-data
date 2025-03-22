@@ -9,11 +9,12 @@
           org.babashka/cli         {:mvn/version "0.8.62"}
           org.babashka/http-client {:mvn/version "0.4.22"}}})
 
-(require '[clj-rss.core :as rss]
-         '[clojure.tools.logging :as log]
-         '[babashka.cli :as cli]
-         '[clojure.walk :as walk]
-         '[babashka.http-client :as http])
+(ns cdg.codegoufr-output-data
+  (:require [clj-rss.core :as rss]
+            [clojure.tools.logging :as log]
+            [babashka.cli :as cli]
+            [clojure.walk :as walk]
+            [babashka.http-client :as http]))
 
 ;;; Define CLI options
 
@@ -744,4 +745,5 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
           (output-data!)
           (display-data!)))))
 
-(-main *command-line-args*)
+(when (= *file* (System/getProperty "babashka.file"))
+  (apply -main *command-line-args*))
