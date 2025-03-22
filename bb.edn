@@ -1,10 +1,4 @@
-{:version        "0.9"
- :description    "Codegouvfr CLI"
- :url            "https://github.com/codegouvfr/codegouvfr-cli"
- :license        {:name "Eclipse Public License - v 2.0"
-                  :url  "http://www.eclipse.org/legal/epl-v20.html"}
- :min-bb-version "0.4.0"
- :src "src/cdg"
- :tasks          {clean
-                  (shell "bash -c"
-                         "rm -rf awesome*md *json *xml *csv *yml src/*json src/*xml src/*csv src/*yml src/*md")}}
+{:src   "src/cdg"
+ :tasks {clean
+         (shell "bash -c"
+                "rm -rf awesome*md *json *xml *csv *yml src/*json src/*xml src/*csv src/*yml src/*md")}}
