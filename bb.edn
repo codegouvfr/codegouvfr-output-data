@@ -1,4 +1,4 @@
-{:src   "src/cdg"
+{:src   "src/codegouvfr"
  :tasks {clean
          (shell "bash -c"
                 "rm -rf awesome*md *json *xml *csv *yml src/*json src/*xml src/*csv src/*yml src/*md")}}

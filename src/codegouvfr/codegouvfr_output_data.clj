@@ -9,10 +9,17 @@
           org.babashka/cli         {:mvn/version "0.8.62"}
           org.babashka/http-client {:mvn/version "0.4.22"}}})
 
-(ns cdg.codegoufr-output-data
+(ns codegouvfr.codegouvfr-output-data
   (:require [clj-rss.core :as rss]
             [clojure.tools.logging :as log]
             [babashka.cli :as cli]
+            [clojure.java.io :as io]
+            [clojure.data.csv :as csv]
+            [clojure.java.shell :as shell]
+            [clj-yaml.core :as yaml]
+            [cheshire.core :as json]
+            [clojure.string :as str]
+            [clojure.set :as set]
             [clojure.walk :as walk]
             [babashka.http-client :as http]))
 
@@ -736,7 +743,7 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
     (log/info "Awesome codegouvfr:" (count @awesome))))
 
 ;; Main execution
-(defn- -main [args]
+(defn -main [& args]
   (let [opts (cli/parse-opts args {:spec cli-options})]
     (reset! cli-opts opts)
     (if (or (:help opts) (:h opts))
