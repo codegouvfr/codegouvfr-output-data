@@ -4,24 +4,25 @@
 ;; SPDX-License-Identifier: EPL-2.0
 ;; License-Filename: EPL-2.0.txt
 
-(deps/add-deps
- '{:deps {clj-rss/clj-rss          {:mvn/version "0.4.0"}
-          org.babashka/cli         {:mvn/version "0.8.62"}
-          org.babashka/http-client {:mvn/version "0.4.22"}}})
-
 (ns codegouvfr.codegouvfr-output-data
-  (:require [clj-rss.core :as rss]
-            [clojure.tools.logging :as log]
-            [babashka.cli :as cli]
-            [clojure.java.io :as io]
-            [clojure.data.csv :as csv]
-            [clojure.java.shell :as shell]
-            [clj-yaml.core :as yaml]
+  (:require [babashka.cli :as cli]
+            [babashka.deps :as deps]
+            [babashka.http-client :as http]
             [cheshire.core :as json]
-            [clojure.string :as str]
+            [clj-yaml.core :as yaml]
+            [clojure.data.csv :as csv]
+            [clojure.java.io :as io]
+            [clojure.java.shell :as shell]
             [clojure.set :as set]
+            [clojure.string :as str]
+            [clojure.tools.logging :as log]
             [clojure.walk :as walk]
-            [babashka.http-client :as http]))
+            [clojure.instant :as instant]))
+
+(deps/add-deps
+ '{:deps {clj-rss/clj-rss {:mvn/version "0.4.0"}}})
+
+(require '[clj-rss.core :as rss])
 
 ;;; Define CLI options
 
@@ -67,7 +68,7 @@
 
 ;;; Helper functions
 
-(defn- shorten-string [^String s]
+(defn- shorten-string [s]
   (if (> (count s) short_desc_size)
     (str (subs s 0 short_desc_size) "…")
     s))
@@ -76,8 +77,8 @@
   (walk/postwalk #(if (= % v) r %) m))
 
 (defn- to-inst
-  [^String s]
-  (.toInstant (clojure.instant/read-instant-date s)))
+  [s]
+  (.toInstant (instant/read-instant-date s)))
 
 (defn- maps-to-csv [m]
   (let [columns (keys (first m))
@@ -92,8 +93,8 @@
        first
        second))
 
-(defn- get-publiccode-url [^String awesome-repo]
-  (let [{:keys [html_url full_name default_branch platform]}
+(defn- get-publiccode-url [awesome-repo]
+  (let [{:keys [_ full_name default_branch platform]}
         (get-repo-properties awesome-repo)
         platform-prefixes
         {"github.com" #(format "https://raw.githubusercontent.com/%s/%s/" %1 %2)
@@ -298,7 +299,7 @@
 ;;; Set annuaire, hosts, owners, repositories and public forges
 
 (def get-name-from-annuaire-id
-  (memoize (fn [^String id] (:nom (get @annuaire id)))))
+  (memoize (fn [id] (:nom (get @annuaire id)))))
 
 (defn- add-service-sup! []
   (log/info "Adding service_sup...")
@@ -524,7 +525,7 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
        vals
        (map #(get % "releases"))
        flatten
-       (sort-by #(clojure.instant/read-instant-date (:published_at %)))
+       (sort-by #(instant/read-instant-date (:published_at %)))
        reverse
        (take 10)
        (map (fn [{:keys [name repo_name html_url body published_at]}]
@@ -551,7 +552,7 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
   (log/info "Output latest-repositories.xml...")
   (->> @repositories
        (filter #(:created_at (val %)))
-       (sort-by #(clojure.instant/read-instant-date (:created_at (val %))))
+       (sort-by #(instant/read-instant-date (:created_at (val %))))
        reverse
        (take 10)
        (map (fn [[r r-data]]
