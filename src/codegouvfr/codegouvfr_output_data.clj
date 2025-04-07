@@ -96,12 +96,11 @@
 (defn- get-publiccode-url [awesome-repo]
   (let [{:keys [_ full_name default_branch platform]}
         (get-repo-properties awesome-repo)
-        platform-prefixes
         ;; FIXME: Provide a more generic solution
-        {"github.com"         #(format "https://raw.githubusercontent.com/%s/%s/" %1 %2)
-         "gitlab.huma-num.fr" #(format "https://gitlab.huma-num.fr/%s/-/raw/%s/" %1 %2)}]
-    (when-let [prefix-fn (get platform-prefixes platform)]
-      (str (prefix-fn full_name default_branch) "publiccode.yml"))))
+        url-format-string (if (= platform "github.com")
+                            "https://raw.githubusercontent.com/%s/%s/"
+                            (str "https://" platform "/%s/-/raw/%s/"))]
+    (str (format url-format-string full_name default_branch) "publiccode.yml")))
 
 (def owners-keys-mapping
   {:a  :location
