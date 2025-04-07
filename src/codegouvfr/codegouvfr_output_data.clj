@@ -97,9 +97,9 @@
   (let [{:keys [_ full_name default_branch platform]}
         (get-repo-properties awesome-repo)
         platform-prefixes
-        {"github.com" #(format "https://raw.githubusercontent.com/%s/%s/" %1 %2)
-         "git.sr.ht"  #(format "%s/blob/%s/" %1 %2)
-         "gitlab.com" #(format "%s/-/raw/%s/" %1 %2)}]
+        ;; FIXME: Provide a more generic solution
+        {"github.com"         #(format "https://raw.githubusercontent.com/%s/%s/" %1 %2)
+         "gitlab.huma-num.fr" #(format "https://gitlab.huma-num.fr/%s/-/raw/%s/" %1 %2)}]
     (when-let [prefix-fn (get platform-prefixes platform)]
       (str (prefix-fn full_name default_branch) "publiccode.yml"))))
 
