@@ -62,9 +62,7 @@
    :top_organizations          "https://code.gouv.fr/data/top_organizations.yml"
    :comptes-organismes-publics "https://code.gouv.fr/data/comptes-organismes-publics.yml"
    :fr-public-sector-ospo      "https://code.gouv.fr/data/fr-public-sector-ospo.yml"
-   :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"
-   :cnll-providers             "https://annuaire.cnll.fr/api/prestataires-sill.json"
-   :cdl-providers              "https://comptoir-du-libre.org/public/export/comptoir-du-libre_export_v1.json"})
+   :awesome-codegouvfr         "https://code.gouv.fr/data/awesome-codegouvfr.yml"})
 
 ;;; Helper functions
 
@@ -651,32 +649,6 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
          json/generate-string
          (spit "formations-logiciels-libres.json"))))
 
-(defn- output-sill-providers []
-  (let [cdl  (->> (fetch-json (:cdl-providers urls))
-                  :softwares
-                  (filter #(not-empty (:sill (:external_resources %))))
-                  (map (juxt #(:id (:sill (:external_resources %)))
-                             #(keep (juxt :name :url
-                                          (fn [a] (:website (:external_resources a))))
-                                    (:providers %))))
-                  (map (fn [[a b]]
-                         [a (into [] (map (fn [[x y z]]
-                                            {:nom x :cdl_url y :website z}) b))])))
-        cnll (->> (fetch-json (:cnll-providers urls))
-                  (map (juxt :sill_id
-                             #(map (fn [p] (set/rename-keys p {:url :cnll_url}))
-                                   (:prestataires %)))))]
-    (->> (group-by first (concat cdl cnll))
-         (map (fn [[id l]] [id (flatten (map second l))]))
-         (filter #(not-empty (second %)))
-         (map (fn [[id l]]
-                {:sill_id      id
-                 :prestataires (map #(apply merge (val %))
-                                    (group-by #(str/lower-case (:nom %)) l))}))
-         (sort-by :sill_id)
-         json/generate-string
-         (spit  "sill-prestataires.json"))))
-
 (defn- output-sill-latest-xml []
   (when-let [sill (fetch-json (:sill urls))]
     (->> sill
@@ -730,7 +702,6 @@ This list is published under Licence Ouverte 2.0 and CC BY.")
     (output-awesome-json)
     (output-awesome-md))
   (output-formations-json)
-  (output-sill-providers)
   (output-sill-latest-xml))
 
 (defn- display-data! []
