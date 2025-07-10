@@ -1,3 +1,7 @@
+<!-- Copyright (c) DINUM, Bastien Guerry -->
+<!-- SPDX-License-Identifier: EPL-2.0 -->
+<!-- License-Filename: EPL-2.0.txt -->
+
 [![img](https://img.shields.io/badge/code.gouv.fr-contributif-blue.svg)](https://code.gouv.fr/documentation/#quels-degres-douverture-pour-les-codes-sources)
 [![Software License](https://img.shields.io/badge/Licence-EPL-green.svg)](https://githut.com/codegouvfr/codegouvfr-cli/tree/main/item/LICENSES/LICENSE.EPL-2.0.txt)
 

@@ -1,3 +1,7 @@
+<!-- Copyright (c) DINUM, Bastien Guerry -->
+<!-- SPDX-License-Identifier: EPL-2.0 -->
+<!-- License-Filename: EPL-2.0.txt -->
+
 # Contributing
 
 Commit messages should be written in English.
